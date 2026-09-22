@@ -39,6 +39,39 @@ def test_run_records_every_attempt_and_only_verified_proofs(tmp_path):
     assert json.loads((tmp_path / "summary.json").read_text()) == summary
 
 
+def test_summary_is_checkpointed_after_every_problem(tmp_path):
+    from prover_loop.prompt import prompt
+    sample = fake_sample({prompt(A): ["  trivial\n```"], prompt(B): ["  sorry\n```"]})
+    seen = []
+
+    def verify(source, theorem):
+        if theorem == "b":
+            seen.append(json.loads((tmp_path / "summary.json").read_text()))
+        return Verdict(theorem == "a", "verified" if theorem == "a" else "lean error")
+
+    final = run([A, B], sample, verify, k=1, out=tmp_path)
+    assert seen == [{"k": 1, "problems": 2, "problems_done": 1, "attempts": 1, "solved": ["a"], "pass_at_k": 0.5, "complete": False}]
+    assert final["complete"] and final["problems_done"] == 2
+
+
+def test_resume_skips_recorded_problems_and_keeps_their_results(tmp_path):
+    from prover_loop.prompt import prompt
+    sample = fake_sample({prompt(A): ["  trivial\n```"], prompt(B): ["  trivial\n```"]})
+    run([A], sample, lambda s, t: Verdict(True, "verified"), k=1, out=tmp_path)
+    checked = []
+
+    def verify(source, theorem):
+        checked.append(theorem)
+        return Verdict(True, "verified")
+
+    summary = run([A, B], sample, verify, k=1, out=tmp_path, resume=True)
+    assert checked == ["b"], "a problem already in attempts.jsonl is not sampled again"
+    assert summary["solved"] == ["a", "b"] and summary["attempts"] == 2 and summary["complete"]
+    rows = [json.loads(line)["problem"] for line in (tmp_path / "attempts.jsonl").read_text().splitlines()]
+    assert rows == ["a", "b"]
+    assert len((tmp_path / "verified.jsonl").read_text().splitlines()) == 2
+
+
 class Stub(BaseHTTPRequestHandler):
     seen: list = []
 

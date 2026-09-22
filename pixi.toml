@@ -1,0 +1,26 @@
+[workspace]
+name = "llm-kernel-lab"
+channels = ["https://conda.modular.com/max-nightly/", "conda-forge"]
+platforms = ["linux-64"]
+
+[dependencies]
+modular = ">=26.6.0.dev2026090805,<27"
+python = ">=3.11"
+pytest = "*"
+
+[tasks]
+# One-time setup. Lean comes from elan (https://github.com/leanprover/elan),
+# which must be on PATH; the Mathlib build is downloaded, not compiled.
+prepare-model = "python tools/prepare_model.py"
+lean-setup = { cmd = "lake exe cache get", cwd = "lean" }
+
+# CPU defaults for a 16 GB box: Q4_K weights, batch 2, and 55% of memory to
+# MAX so Lean + Mathlib (~3 GB) fits beside it. On a GPU drop the last three.
+serve = """max serve --model models/deepseek-prover-v1.5-rl \
+  --weight-path DeepSeek-Prover-V1.5-RL.Q4_K_M.gguf \
+  --served-model-name deepseek-prover-v1.5-rl --quantization-encoding q4_k \
+  --max-length 2048 --port 8000 \
+  --devices cpu --max-batch-size 2 --device-memory-utilization 0.55"""
+
+prove = "python -m prover_loop.run"
+test = "python -m pytest -q tests"

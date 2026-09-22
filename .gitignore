@@ -1,0 +1,7 @@
+.pixi/
+models/
+runs/
+lean/.lake/
+lean/.verify/
+__pycache__/
+.pytest_cache/

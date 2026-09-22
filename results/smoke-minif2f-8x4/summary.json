@@ -1,0 +1,18 @@
+{
+  "model": "deepseek-prover-v1.5-rl",
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 512,
+  "seed": 0,
+  "problem_file": "problems/minif2f_test.jsonl",
+  "k": 4,
+  "problems": 8,
+  "attempts": 32,
+  "solved": [
+    "mathd_algebra_478",
+    "mathd_algebra_141",
+    "mathd_numbertheory_3",
+    "mathd_algebra_209"
+  ],
+  "pass_at_k": 0.5
+}

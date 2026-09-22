@@ -24,3 +24,31 @@ serve = """max serve --model models/deepseek-prover-v1.5-rl \
 
 prove = "python -m prover_loop.run"
 test = "python -m pytest -q tests"
+
+# Fine-tuning lives in its own environments: MAX serves but has no training
+# API. `train` is CPU PyTorch (enough to prove the pipeline on a tiny model);
+# `train-cuda` is the same stack on CUDA for the real 7B adapter.
+[feature.train.dependencies]
+python = "3.12.*"
+transformers = ">=4.50"
+peft = "*"
+trl = "*"
+datasets = "*"
+accelerate = "*"
+pytest = "*"
+
+[feature.cpu.dependencies]
+pytorch-cpu = "*"
+
+[feature.cuda.system-requirements]
+cuda = "12"
+
+[feature.cuda.dependencies]
+pytorch-gpu = "*"
+
+[feature.train.tasks]
+train-lora = "python tools/train_lora.py"
+
+[environments]
+train = { features = ["train", "cpu"], no-default-feature = true }
+train-cuda = { features = ["train", "cuda"], no-default-feature = true }

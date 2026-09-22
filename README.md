@@ -26,7 +26,8 @@ pixi run prepare-model      # local model dir: upstream config + fixed tokenizer
 pixi run lean-setup         # Mathlib v4.15.0 build cache (needs elan on PATH)
 pixi run serve &            # MAX on CPU, OpenAI-compatible, port 8000
 pixi run prove --limit 8 --k 4 --out runs/first
-pixi run test               # 19 tests; the Lean ones need lean-setup (REQUIRE_LEAN=1 makes them mandatory)
+pixi run test               # the Lean tests need lean-setup (REQUIRE_LEAN=1 makes them mandatory)
+pixi run -e train pytest tests   # training tests (tiny model, CPU)
 ```
 
 A run writes `attempts.jsonl` (every sample with the kernel's verdict and
@@ -55,11 +56,45 @@ minutes on CPU. Both are one `--model` away on a GPU box.
 - Memory: MAX takes ~55% (weights + KV cache), Lean ~3 GB. At MAX's default
   90%, Lean thrashes: the serve task caps it with `--device-memory-utilization`.
 
-## Next round (not run here)
+## Next round: fine-tuning
 
-The tuning step needs PyTorch and a GPU; MAX serves models but has no
-training API. Fine-tune a LoRA adapter on `verified.jsonl` against the
-full-precision base (PEFT/TRL SFT), then serve it with
-`max serve ... --enable-lora --lora-paths <name>=<dir>` and point
-`--model <name>` at it. Whether MAX's LoRA path accepts a GGUF-quantized base
-is untested; on a GPU serve the bf16 base instead.
+Training data never comes from the benchmark. The loop is run on a
+**Lean Workbook** draw (`problems/lean_workbook_train.jsonl`, 400 problems)
+and miniF2F-test is kept for evaluation only.
+
+```sh
+# 1. training problems: proved-only, deterministic, eval-disjoint, re-elaborated here
+python tools/workbook_problems.py lean_workbook.json --n 400 --lean
+# 2. collect verified proofs on them
+pixi run prove --problems problems/lean_workbook_train.jsonl --k 4 --out runs/workbook-k4
+# 3. LoRA on the verified proofs (GPU)
+pixi run -e train-cuda train-lora --data runs/workbook-k4/verified.jsonl --out adapters/round1
+# 4a. serve the adapter natively (GPU)
+max serve --model deepseek-ai/DeepSeek-Prover-V1.5-RL --prefer-module-v3 \
+  --enable-lora --no-enable-prefix-caching --lora-paths round1=adapters/round1
+# 4b. or merge it and serve a plain model (any device)
+pixi run -e train python tools/merge_lora.py adapters/round1 models/round1-merged
+# 5. evaluate on miniF2F-test, which the adapter never saw (4a; after 4b, --model is the merged dir)
+pixi run prove --model round1 --k 4 --out runs/minif2f-test-round1
+```
+
+What each step guarantees, and what was measured here:
+
+- **Selection.** Only statements Lean Workbook ships a proof for (so true),
+  ordered by SHA-256 of the name, minus every statement whose
+  `statement_key` matches miniF2F-test: two Workbook statements
+  (`lean_workbook_9150`, `lean_workbook_plus_65025`) are exact duplicates of
+  a test problem and are excluded. One batch Lean run drops statements that
+  no longer elaborate under Mathlib v4.15: 13 of 500 here.
+- **Training rows** (`prover_loop/sft.py`): deduplicated, at most two proofs
+  per problem, and any row that states an evaluation problem raises
+  `Contamination` rather than being filtered. The loss covers the completion
+  (proof, closing fence, EOS) only; the prompt is masked.
+- **Adapter** (`tools/train_lora.py`): LoRA r=16, α=32 on `q/k/v/o_proj`,
+  saved with a manifest of base, data SHA-256, hyperparameters and final loss.
+  Attention-only because that is what MAX's Llama LoRA path accepts; an
+  adapter that touches the MLP is rejected as `LOAD_INVALID_ADAPTER`.
+- **Serving.** MAX's LoRA kernel (SGMV) is GPU-only and needs the ModuleV3
+  architecture with prefix caching off, so on CPU the adapter is merged
+  instead. Train, save, merge and `max serve` were run end to end here on a
+  tiny random Llama; the 7B adapter needs a ≥24 GB GPU (bf16 base).

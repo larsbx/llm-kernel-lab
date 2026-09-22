@@ -25,5 +25,15 @@ class Problem:
         return found[0]
 
 
+def statement_key(formal_statement: str) -> str:
+    """What a statement asserts, independent of its name, header and layout:
+    the text after `theorem <name>` up to `:= by`, whitespace collapsed. Two
+    problems with equal keys are the same problem for contamination purposes."""
+    body = formal_statement[formal_statement.index("theorem"):]
+    body = re.sub(r"^theorem\s+\S+", "", body)
+    body = re.split(r":=\s*by\b", body, maxsplit=1)[0]
+    return " ".join(body.split())
+
+
 def load(path: Path) -> list[Problem]:
     return [Problem(**json.loads(line)) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]

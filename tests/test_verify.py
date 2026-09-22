@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from prover_loop.verify import LEAN_DIR, check, judge
+from prover_loop.verify import LEAN_DIR, check, judge, run_bounded
 
 NAME = "t"
 CLEAN = "'t' depends on axioms: [propext, Classical.choice, Quot.sound]\n"
@@ -31,6 +31,29 @@ def test_no_axioms_at_all_is_accepted():
 def test_everything_else_is_rejected_with_its_reason(output, code, reason):
     verdict = judge(output, code, NAME)
     assert not verdict.verified and verdict.reason == reason
+
+
+def alive(pid: int) -> bool:
+    try:
+        return Path(f"/proc/{pid}/stat").read_text().split(") ")[1][0] not in "ZX"
+    except (FileNotFoundError, IndexError):
+        return False
+
+
+def test_a_timeout_kills_the_whole_process_group_not_just_the_child(tmp_path):
+    """`lake env lean` is lake with lean beneath it; killing only lake leaves a
+    runaway lean holding gigabytes, which is how a verifier timeout OOM-killed the server."""
+    import time
+    pidfile = tmp_path / "grandchild.pid"
+    start = time.monotonic()
+    code, _ = run_bounded(["sh", "-c", f"sleep 60 & echo $! > {pidfile}; wait"], tmp_path, timeout=1)
+    assert code is None and time.monotonic() - start < 10, "returns at the timeout, not when the grandchild ends"
+    time.sleep(0.2)
+    assert not alive(int(pidfile.read_text()))
+
+
+def test_a_finished_command_returns_its_code_and_output(tmp_path):
+    assert run_bounded(["sh", "-c", "echo out; echo err >&2; exit 3"], tmp_path, timeout=10) == (3, "out\nerr\n")
 
 
 LEAN = shutil.which("lake") is not None and (LEAN_DIR / ".lake" / "packages" / "mathlib").is_dir()

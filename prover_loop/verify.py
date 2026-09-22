@@ -11,7 +11,9 @@ rejection, never a pass.
 
 from __future__ import annotations
 
+import os
 import re
+import signal
 import subprocess
 import tempfile
 import time
@@ -43,6 +45,21 @@ def judge(output: str, returncode: int, theorem: str) -> Verdict:
     return Verdict(False, "disallowed axioms: " + ", ".join(extra)) if extra else Verdict(True, "verified")
 
 
+def run_bounded(cmd: list[str], cwd: Path, timeout: float) -> tuple[int | None, str]:
+    """Run `cmd` in its own session; on timeout kill the whole group and return
+    (None, output so far). `lake env lean` is lake with lean beneath it, and
+    killing only lake leaves a runaway lean holding gigabytes."""
+    proc = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                            start_new_session=True)
+    try:
+        out, _ = proc.communicate(timeout=timeout)
+        return proc.returncode, out
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        out, _ = proc.communicate()
+        return None, out
+
+
 def check(source: str, theorem: str, timeout: float = 300, lean_dir: Path = LEAN_DIR) -> Verdict:
     """Compile `source` in the Mathlib project and judge it."""
     scratch = lean_dir / ".verify"
@@ -51,10 +68,11 @@ def check(source: str, theorem: str, timeout: float = 300, lean_dir: Path = LEAN
         f.write(f"{source}\n\n#print axioms {theorem}\n")
     start = time.monotonic()
     try:
-        done = subprocess.run(["lake", "env", "lean", f.name], cwd=lean_dir, capture_output=True, text=True, timeout=timeout)
-    except subprocess.TimeoutExpired:
-        return Verdict(False, "timeout", time.monotonic() - start)
+        code, output = run_bounded(["lake", "env", "lean", f.name], lean_dir, timeout)
     finally:
         Path(f.name).unlink(missing_ok=True)
-    verdict = judge(done.stdout + done.stderr, done.returncode, theorem)
-    return Verdict(verdict.verified, verdict.reason, time.monotonic() - start)
+    seconds = time.monotonic() - start
+    if code is None:
+        return Verdict(False, "timeout", seconds)
+    verdict = judge(output, code, theorem)
+    return Verdict(verdict.verified, verdict.reason, seconds)

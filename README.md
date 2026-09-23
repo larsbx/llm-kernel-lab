@@ -148,7 +148,9 @@ remains the proof authority for theorem claims.
 ## Tax-law track (spec only)
 
 `research/tax_lm/SPEC.md` specifies a small (≤ 3B) model of US federal tax
-law built on the same split: the model proposes, a deterministic verifier
-decides. Here the verifier resolves each citation against a dated snapshot of
-the IRC, regulations, IRB and IRM, checks the quote verbatim, and checks
-amounts against an independent tax engine.
+law on the same split: the model proposes, deterministic code decides. After
+TypeSafe's Jev, it answers typed questions (bool, choice, score) with
+calibrated probabilities in one pass over a fact state, with criteria taken
+from a dated snapshot of the IRC, regulations, IRB and IRM. Citations are
+node IDs and quote spans chosen from what was retrieved, amounts come from an
+independent tax engine, and training labels come from that engine.

@@ -1,0 +1,36 @@
+schema = 1
+
+[[experiment]]
+id = "tf1_moment_polytope_scaling"
+program = "TF-1"
+kernels = ["contract", "mode_gram", "batched_rank", "structured_reduce"]
+first_authority_grade = "E1"
+promotion_requires = ["exact_facet_reconstruction", "independent_check"]
+
+[[experiment]]
+id = "tf2_spiked_tensor_transition"
+program = "TF-2"
+kernels = ["contract", "structured_reduce"]
+first_authority_grade = "E1"
+promotion_requires = ["seed_replay", "cross_implementation_replication"]
+
+[[experiment]]
+id = "tf3_rank_growth"
+program = "TF-3"
+kernels = ["contract", "mode_gram", "batched_rank", "tt_local_update"]
+first_authority_grade = "E1"
+promotion_requires = ["exact_rank_check_on_selected_snapshots"]
+
+[[experiment]]
+id = "tf4_secant_recon"
+program = "TF-4"
+kernels = ["contract", "batched_rank"]
+first_authority_grade = "E1"
+promotion_requires = ["exact_jacobian_reconstruction", "independent_check"]
+
+[[experiment]]
+id = "tf5_peps_contract"
+program = "TF-5"
+kernels = ["contract", "permute_contract", "mode_gram"]
+first_authority_grade = "E0"
+promotion_requires = ["cross_implementation_replication"]

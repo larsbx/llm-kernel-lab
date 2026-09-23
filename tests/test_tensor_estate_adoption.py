@@ -39,3 +39,11 @@ def test_claim_and_proof_authority_are_fixed():
     errors = checker.validate(broken)
     assert "claim_owner must remain domain_repository" in errors
     assert "proof_authority must remain domain_checker_or_lean" in errors
+
+
+def test_boolean_route_priority_is_rejected():
+    data = load_manifest()
+    broken = copy.deepcopy(data)
+    broken["route"][0]["priority"] = True
+    errors = checker.validate(broken)
+    assert "route[0].priority must be a positive integer" in errors

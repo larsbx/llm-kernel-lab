@@ -92,10 +92,18 @@ def rotor_apply(rotor: Rotor, v: Sequence[int | Fraction]) -> tuple[Fraction, Fr
 
 
 def normalize_weights(weights: Iterable[int | Fraction]) -> tuple[Fraction, ...]:
-    """Normalize multiplicative weights directly; no logits/exp/softmax."""
+    """Normalize strictly positive multiplicative weights; no logits/exp/softmax.
+
+    These values stand in for a probability distribution, so every input weight
+    must be positive before normalization.  A nonzero total is not sufficient:
+    mixed-sign inputs such as (2, -1) would otherwise normalize to values that
+    are not probabilities.
+    """
     ws = tuple(_q(w) for w in weights)
     if not ws:
         raise ValueError("at least one weight is required")
+    if any(w <= 0 for w in ws):
+        raise ValueError("weights must be strictly positive")
     total = sum(ws, Fraction(0))
     if total == 0:
         raise ZeroDivisionError("weight sum is zero")

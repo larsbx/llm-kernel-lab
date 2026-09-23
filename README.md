@@ -144,3 +144,11 @@ The representation study in
 models do better or worse when the same mathematics is presented through
 triangle/trigonometric language versus algebraic Gram/rotor language.  Lean
 remains the proof authority for theorem claims.
+
+## Tax-law track (spec only)
+
+`research/tax_lm/SPEC.md` specifies a small (≤ 3B) model of US federal tax
+law built on the same split: the model proposes, a deterministic verifier
+decides. Here the verifier resolves each citation against a dated snapshot of
+the IRC, regulations, IRB and IRM, checks the quote verbatim, and checks
+amounts against an independent tax engine.

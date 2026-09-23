@@ -23,7 +23,10 @@ serve = """max serve --model models/deepseek-prover-v1.5-rl \
   --devices cpu --max-batch-size 2 --device-memory-utilization 0.55"""
 
 prove = "python -m prover_loop.run"
-test = "python tools/audit_transcendentals.py && python -m pytest -q tests"\ntensor-audit = "python tools/audit_transcendentals.py"\ntensor-test = "python tools/audit_transcendentals.py && python -m pytest -q tests/test_tensor_lab_algebraic.py tests/test_tensor_lab_firewall.py"\ntensor-plan = "python benchmarks/tensor_frontier/harness.py --list"
+test = "python tools/audit_transcendentals.py && python -m pytest -q tests"
+tensor-audit = "python tools/audit_transcendentals.py"
+tensor-test = "python tools/audit_transcendentals.py && python -m pytest -q tests/test_tensor_lab_algebraic.py tests/test_tensor_lab_firewall.py"
+tensor-plan = "python benchmarks/tensor_frontier/harness.py --list"
 
 # Fine-tuning lives in its own environments: MAX serves but has no training
 # API. `train` is CPU PyTorch (enough to prove the pipeline on a tiny model);

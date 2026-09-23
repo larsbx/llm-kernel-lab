@@ -257,6 +257,19 @@ disagreement is logged and the case excluded, never voted:
 
 It provides amounts at serve time and labels at training time (§6.1).
 
+### 4.5 Deontic layer
+
+`DEONTIC.md` puts the deontic-circuits kernel
+(`larsbx/usul-al-fiqh-deontic-circuits`) between decisions and verdicts.
+Norms are `norm(Act, Object, Subject, Operator ∈ {o,f,r,d,p,n}, Modality,
+Warrant)` with warrants drawn from `S_as_of`. The decision model is then the
+calibrated evidence layer: it answers questions about facts, and the kernel
+turns those answers into obligations, prohibitions and permissions, each
+with a derivation trace, or into a typed obstruction when they don't fit
+together. Verdict probabilities are Fréchet intervals over the model's
+marginals (DEONTIC.md §2.1), and the response gains `verdicts` and
+`obstructions`.
+
 ## 5. Model
 
 ### 5.1 Base and serving
@@ -382,6 +395,8 @@ tax_loop/
   cite.py       grammar, canonical(), render(), resolve(cite, t)
   retrieve.py   BM25 ∪ dense over S_t
   engine.py     one interface, two back ends; labels + amounts
+  norms.py      LLM-proposed norm records (candidate only) → deontic bundle
+  kernel.py     subprocess adapter to the deontic kernel (JSON in/out)
   facts.py      fact-pattern generator + NL rendering (§6.1)
   decide.py     request → prefix/suffix batch → typed answers (§5.2)
   verify.py     accept() → Verdict(ok, reason)
@@ -401,6 +416,7 @@ over a `Problem`/`Verifier` protocol rather than copied.
 | M1 | `engine` (one back end), `facts`, `verify` | property tests: out-of-set ID ⇒ reject; span past end ⇒ reject; dist not summing to 1 ⇒ reject; two back ends disagree ⇒ excluded |
 | M2 | baselines on all sets; S1 ablation | table in `results/tax-lm/`; S1 kept or dropped |
 | M3 | S2 + S3 on the §152/§2/§32/§121 families, served on CPU | release gates of §7; 10-question call p95 ≤ 1 s *(target)* |
+| M3d | deontic first slice (DEONTIC.md §5) | obstruction-category tests pass; kernel vs. engine: 0 disagreements on 10⁴ households |
 | M4 | IRM, IRB, pubs; second engine; explain mode; expert set | expert-set accuracy with CI; calibration holds on expert set within reported ECE |
 
 ## 10. Risks and rules

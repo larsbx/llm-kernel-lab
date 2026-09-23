@@ -84,7 +84,7 @@ def validate(data: dict) -> list[str]:
             )
 
         priority = route.get("priority")
-        if not isinstance(priority, int) or priority < 1:
+        if type(priority) is not int or priority < 1:
             errors.append(f"{prefix}.priority must be a positive integer")
         elif priority in priorities:
             errors.append(f"duplicate priority: {priority}")

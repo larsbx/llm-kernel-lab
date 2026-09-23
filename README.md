@@ -56,6 +56,19 @@ minutes on CPU. Both are one `--model` away on a GPU box.
 - Memory: MAX takes ~55% (weights + KV cache), Lean ~3 GB. At MAX's default
   90%, Lean thrashes: the serve task caps it with `--device-memory-utilization`.
 
+## Round 1 on a GPU box
+
+`gpu/round1.sh` does the whole round on one machine with >= 24 GB VRAM and an
+NVIDIA driver >= 580 (e.g. a Runpod RTX 4090): installs pixi and elan, prepares
+the bf16 model with the fixed tokenizer, fetches the Mathlib cache, trains the
+LoRA on `results/workbook-k4/verified.jsonl`, serves base and base + LoRA from
+one MAX server, runs miniF2F-test on both, and packs
+`round1-results.tar.gz`. Finished steps are skipped on a re-run.
+
+```sh
+nohup bash gpu/round1.sh > round1.log 2>&1 &   # then: tail -f round1.log
+```
+
 ## Next round: fine-tuning
 
 Training data never comes from the benchmark. The loop is run on a

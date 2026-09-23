@@ -46,3 +46,11 @@ def test_spread_rejects_isotropic_chart():
 def test_weights_are_normalized_without_logits():
     assert normalize_weights((2, 3, 5)) == (Fraction(1, 5), Fraction(3, 10), Fraction(1, 2))
     assert power_sum((2, 3, 5), 2) == Fraction(19, 50)
+
+
+@pytest.mark.parametrize("weights", [(2, -1), (2, 0), (0,), (-1,)])
+def test_nonpositive_weights_are_rejected(weights):
+    with pytest.raises(ValueError, match="strictly positive"):
+        normalize_weights(weights)
+    with pytest.raises(ValueError, match="strictly positive"):
+        power_sum(weights, 2)

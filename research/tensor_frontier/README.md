@@ -34,6 +34,8 @@ completion is evidence, not proof.
 
 The track is governed by:
 
+- `LITERATURE_REVIEW_2026-09.md` — current literature baseline, frontier gaps,
+  and MAX/Mojo experiment opportunities through September 2026.
 - `RESEARCH_PLAN.md` — frontier questions, work packages, evidence ladder.
 - `TRANSCENDENTAL_FIREWALL.md` — algebraic vocabulary and non-equivalence
   rules.

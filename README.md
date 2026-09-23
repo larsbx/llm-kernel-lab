@@ -98,3 +98,36 @@ What each step guarantees, and what was measured here:
   architecture with prefix caching off, so on CPU the adapter is merged
   instead. Train, save, merge and `max serve` were run end to end here on a
   tiny random Llama; the 7B adapter needs a ≥24 GB GPU (bf16 base).
+
+
+## Tensor empirical-mathematics track
+
+The lab also hosts a deliberately non-authoritative tensor discovery track under
+`research/tensor_frontier/`.  MAX/Mojo kernels are used to search large tensor
+spaces and generate empirical evidence; they never certify a theorem.  Candidate
+phenomena must cross an exact reconstruction/checking boundary before they can
+be promoted.
+
+A second constraint is the **transcendental firewall**.  Authoritative problem
+definitions use algebraic invariants rather than angles, trigonometric
+functions, logarithms, exponentials, or complex-number syntax.  When a source
+paper uses an analytic quantity that has no equivalent algebraic replacement,
+the lab records it as an analytic diagnostic rather than silently changing the
+claim.
+
+The first executable reference layer is `tensor_lab/algebraic.py`, using exact
+`Fraction` arithmetic.  The first research targets are moment-polytope/tensor
+scaling experiments, spiked tensor phase transitions, low-rank tensor dynamics,
+secant/border-rank reconnaissance, and PEPS-style contraction kernels.
+
+```sh
+pixi run tensor-audit
+pixi run tensor-test
+pixi run tensor-plan
+```
+
+The representation study in
+`research/tensor_frontier/TRIANGLE_BIAS_PROTOCOL.md` measures whether prover
+models do better or worse when the same mathematics is presented through
+triangle/trigonometric language versus algebraic Gram/rotor language.  Lean
+remains the proof authority for theorem claims.

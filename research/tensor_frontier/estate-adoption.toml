@@ -1,0 +1,81 @@
+schema = 1
+
+[authority]
+discovery = "larsbx/llm-kernel-lab"
+reusable_exact_kernels = "larsbx/finite-math-kernels"
+independent_oracle = "larsbx/julia-oracle-lab"
+semantic_contracts = "larsbx/semantic-categorical-oracle"
+claim_owner = "domain_repository"
+proof_authority = "domain_checker_or_lean"
+
+[[route]]
+id = "closure-fiber-trace-gram"
+repository = "larsbx/closure-fiber-of-multiplication-research"
+priority = 1
+role = "domain_owner"
+imports = ["question_contract", "nielsen_tuple_corpus", "claim_boundary"]
+exports = ["trace_gram_observations", "exact_anomaly_witnesses", "representation_pairs"]
+allowed_max_grade = "E3"
+may_accept_domain_claim = false
+
+[[route]]
+id = "height-incidence-sweep"
+repository = "larsbx/height-pairings-bsd-interfaces"
+priority = 2
+role = "domain_owner"
+imports = ["question_contract", "incidence_family", "claim_boundary"]
+exports = ["rank_observations", "degeneracy_candidates", "exact_witnesses"]
+allowed_max_grade = "E3"
+may_accept_domain_claim = false
+
+[[route]]
+id = "exact-kernel-promotion"
+repository = "larsbx/finite-math-kernels"
+priority = 3
+role = "reusable_exact_kernel_owner"
+imports = ["stable_cross_domain_contract", "bounded_differential_corpus", "provenance"]
+exports = ["versioned_exact_kernel"]
+allowed_max_grade = "E4"
+may_accept_domain_claim = false
+
+[[route]]
+id = "julia-independent-replay"
+repository = "larsbx/julia-oracle-lab"
+priority = 4
+role = "independent_oracle"
+imports = ["replay_record", "candidate_witness", "predicate"]
+exports = ["agrees", "disagrees", "inconclusive", "oracle_error"]
+allowed_max_grade = "E4"
+may_accept_domain_claim = false
+
+[[route]]
+id = "representation-equivalence"
+repository = "larsbx/semantic-categorical-oracle"
+priority = 5
+role = "semantic_contract_owner"
+imports = ["T_form", "A_form", "C_form", "declared_semantics"]
+exports = ["semantic_normal_form", "equivalence_verdict", "counterexample"]
+allowed_max_grade = "E4"
+may_accept_domain_claim = false
+
+[[route]]
+id = "psc-method-transfer"
+repository = "larsbx/pisot-substitution-conjecture-research"
+priority = 6
+role = "domain_owner"
+imports = ["selected_problem_contract", "corpus_policy", "claim_boundary"]
+exports = ["representation_experiment", "performance_evidence", "exact_candidate"]
+allowed_max_grade = "E3"
+may_accept_domain_claim = false
+notes = "Adopt methodology selectively; do not tensorize finite automata or substitution combinatorics without a natural multilinear contract."
+
+[[route]]
+id = "finite-mandelbrot-method-transfer"
+repository = "larsbx/finite-mandelbrot-research"
+priority = 7
+role = "domain_owner"
+imports = ["selected_problem_contract", "certificate_boundary"]
+exports = ["representation_experiment", "performance_evidence"]
+allowed_max_grade = "E3"
+may_accept_domain_claim = false
+notes = "Use only where multilinear structure is natural or for LLM representation studies."

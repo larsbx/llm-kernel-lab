@@ -41,6 +41,10 @@ The track is governed by:
   algebraic representations.
 - `../../benchmarks/tensor_frontier/manifest.toml` — initial kernel/experiment
   registry.
+- `ESTATE_INTEGRATION.md` — how the lab plugs into the rest of the research
+  estate without moving claim authority.
+- `estate-adoption.toml` — machine-readable repository routing and authority
+  declarations.
 
 The first executable oracle lives in `../../tensor_lab/algebraic.py`.  It is
 small on purpose: exact rational identities first, accelerator kernels second.

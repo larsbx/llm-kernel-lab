@@ -47,7 +47,7 @@ computation cannot substitute for that boundary.
 | reference | `tensor_lab/` | `reference/` | exact executable reference semantics |
 | generation | `prover_loop/` | `generation/` | candidate generation and verification orchestration |
 | oracles | `mojo/` | `oracles/` | non-authoritative high-performance research computation |
-| experiments | `research/tensor_frontier/`, `benchmarks/` | `experiments/` | research programmes and benchmark experiments |
+| experiments | `research/tensor_frontier/*.md`, `benchmarks/` | `experiments/` | research programmes and benchmark experiments |
 | conformance | `tests/` | `conformance/` | regression and boundary tests |
 | evidence | `results/`, `problems/` | `evidence/` | benchmark inputs and generated evidence |
 | tooling | `tools/`, `gpu/` | `tools/` | audits, preparation, training and run orchestration |

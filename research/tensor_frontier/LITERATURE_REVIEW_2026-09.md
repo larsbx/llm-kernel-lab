@@ -45,9 +45,9 @@ literature does not yet establish a universal law for the rank required to
 maintain a given accuracy. The core empirical object should therefore be a
 rank surface such as
 
-$
+$$
 r_\varepsilon(\mathrm{Re},N,t,\mathcal T,Q),
-$
+$$
 
 where $\mathcal T$ records tensorization and $Q$ records the accuracy
 criterion or physical observable.
@@ -55,13 +55,13 @@ criterion or physical observable.
 MAX/Mojo is best used as the instrument, not the authority. The program should
 separate:
 
-$
+$$
 \text{high-throughput search}
 \longrightarrow
 \text{high-precision/statistical replication}
 \longrightarrow
 \text{exact or domain-specific validation}.
-$
+$$
 
 For pure tensor geometry this means rational/algebraic reconstruction and exact
 rank or membership checking. For statistical inference this means independent
@@ -129,7 +129,7 @@ minrank and border subrank.
 
 This is the clearest precedent in the review for a pipeline of the form:
 
-$
+$$
 \text{large computation}
 \rightarrow
 \text{unexpected geometric pattern}
@@ -137,7 +137,7 @@ $
 \text{exact separating structure}
 \rightarrow
 \text{theorem}.
-$
+$$
 
 ### 2.2 Key sources
 
@@ -183,9 +183,9 @@ The following should be treated as hypotheses to test, not as literature facts:
 
 The central dense primitive is
 
-$
+$$
 G_i=T_{(i)}T_{(i)}^\ast.
-$
+$$
 
 For dense $d^3$ tensors this is roughly $2d^4$ operations per mode. The
 systems challenge is not only the matrix multiply; it is avoiding physical
@@ -207,7 +207,7 @@ can coexist with runtime tensor dimensions:
 
 A useful research sequence is:
 
-$
+$$
 \text{Mojo numerical anomaly}
 \rightarrow
 \text{FP64/high-precision replay}
@@ -215,7 +215,7 @@ $
 \text{rational/algebraic reconstruction}
 \rightarrow
 \text{exact Sage/Julia checker}.
-$
+$$
 
 The GPU is a candidate generator, never the rank or polytope authority.
 
@@ -228,9 +228,9 @@ The GPU is a candidate generator, never the rank or polytope authority.
 Tensor PCA studies a planted low-rank signal hidden in high-order noise, for
 example
 
-$
+$$
 Y=\lambda x^{\otimes p}+W.
-$
+$$
 
 Unlike matrix PCA, the tensor problem exhibits a gap between what is
 statistically identifiable and what known efficient algorithms achieve.
@@ -249,9 +249,9 @@ for tensor PCA.
 Together these results motivate an empirical surface rather than a single
 number:
 
-$
+$$
 P_{\mathrm{recover}}(n,p,\mathrm{SNR},A,\text{budget}).
-$
+$$
 
 ### 3.2 Key sources
 
@@ -282,11 +282,11 @@ A strong finite-size program should test at least four questions.
 
 **Finite-size scaling.** For an algorithm $A$, estimate whether
 
-$
+$$
 \widehat{\lambda}_c(n,A)
 =
 \lambda_c$A$+c_A n^{-\omega_A}+o(n^{-\omega_A})
-$
+$$
 
 describes the crossover, and whether exponents differ by algorithm class.
 
@@ -309,9 +309,9 @@ establish generic computational hardness.
 A direct order-three tensor-vector contraction is approximately memory-bandwidth
 bound:
 
-$
+$$
 y_i=\sum_{jk} T_{ijk}x_jx_k.
-$
+$$
 
 For explicit FP32 tensors, storage becomes the limiting factor rapidly. The
 better kernel is therefore not simply "faster contraction" but deterministic
@@ -349,9 +349,9 @@ Tensor trains and matrix-product-state representations replace a full
 high-dimensional array with a chain of low-order cores. In favorable regimes
 the storage can change from an exponential grid to roughly
 
-$
+$$
 O(DNr^2),
-$
+$$
 
 or even smaller under quantized tensorization, provided the required rank $r$
 remains moderate.
@@ -404,13 +404,13 @@ discretization is prohibitively expensive.
 
 The literature does not establish a universal law of the form
 
-$
+$$
 r\propto \mathrm{Re}^{\alpha}.
-$
+$$
 
 A useful empirical object is instead
 
-$
+$$
 r_\varepsilon=
 r_\varepsilon(
 \mathrm{Re},
@@ -419,7 +419,7 @@ N,
 t,
 \mathcal T,
 Q).
-$
+$$
 
 The experiment should distinguish at least three possibilities:
 
@@ -438,11 +438,11 @@ The main tensor-train primitive is `tt_round`. A conventional rounding sweep
 uses QR orthogonalization and truncated SVD. Under uniform physical dimension
 $q$, order $D$, and rank $r$,
 
-$
+$$
 \text{storage}\sim O(Dqr^2),
 \qquad
 \text{rounding}\sim O(Dqr^3).
-$
+$$
 
 The practical problem is often intermediate rank $R$, not only the retained
 rank $r$. Nonlinear products or operator application can temporarily produce

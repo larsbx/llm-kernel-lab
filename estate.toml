@@ -85,7 +85,7 @@ id = "docs"
 target = "docs"
 authority = "exposition"
 required = true
-current = ["README.md"]
+current = ["README.md", "docs"]
 
 [[language]]
 name = "Lean"

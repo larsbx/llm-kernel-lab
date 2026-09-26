@@ -285,7 +285,7 @@ A strong finite-size program should test at least four questions.
 $$
 \widehat{\lambda}_c(n,A)
 =
-\lambda_c$A$+c_A n^{-\omega_A}+o(n^{-\omega_A})
+\lambda_c(A)+c_A n^{-\omega_A}+o(n^{-\omega_A})
 $$
 
 describes the crossover, and whether exponents differ by algorithm class.

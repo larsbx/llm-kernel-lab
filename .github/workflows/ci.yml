@@ -1,0 +1,18 @@
+name: llm-kernel-lab-audit
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e
+        with:
+          cache: true
+      - name: Audit estate authority layout
+        uses: larsbx/finite-math-kernels/audit/estate_repository/v1@7543130ccfa05a88b5ddbacb46d4371ac99c21f9
+      - name: Run repository test lane
+        run: pixi run test

@@ -8,6 +8,11 @@ lifecycle = "active"
 default_branch = "main"
 layout_status = "transitional"
 
+[estate_tooling]
+repository = "larsbx/finite-math-kernels"
+path = "audit/estate_repository/v1"
+revision = "7543130ccfa05a88b5ddbacb46d4371ac99c21f9"
+
 [principles]
 ordering = ["authority", "domain", "language"]
 empty_silos = "forbidden"
@@ -119,5 +124,5 @@ next = [
   "move exact tensor reference code under the reference plane",
   "move tensor discovery kernels under explicit oracle or experiment namespaces",
   "separate immutable benchmark inputs from generated evidence",
-  "extract the generic estate contract and audit after this second adoption",
+  "consume the shared estate audit by immutable revision",
 ]

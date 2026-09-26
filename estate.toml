@@ -56,7 +56,8 @@ id = "experiments"
 target = "experiments"
 authority = "non_authoritative_experiment"
 required = true
-current = ["research/tensor_frontier", "benchmarks"]
+current = ["benchmarks"]
+current_globs = ["research/tensor_frontier/*.md"]
 
 [[plane]]
 id = "conformance"

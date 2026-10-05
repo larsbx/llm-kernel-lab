@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "micro-train"
+version = "0.1.0"
+description = "Train a micro causal LM or text classifier from scratch on bytes"
+requires-python = ">=3.11"
+dependencies = ["torch", "safetensors"]
+
+[project.scripts]
+micro-train = "micro_train.train:cli"
+
+[tool.setuptools]
+packages = ["micro_train"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

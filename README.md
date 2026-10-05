@@ -56,6 +56,12 @@ minutes on CPU. Both are one `--model` away on a GPU box.
 - Memory: MAX takes ~55% (weights + KV cache), Lean ~3 GB. At MAX's default
   90%, Lean thrashes: the serve task caps it with `--device-memory-utilization`.
 
+## Micro LLM / classifier container
+
+`flake.nix` provisions a podman container for a from-scratch micro LM /
+text-classifier pipeline (`micro/`): `nix run .#run -- lm --data corpus.txt --out runs/lm`.
+See `micro/README.md`.
+
 ## Round 1 on a GPU box
 
 `gpu/round1.sh` does the whole round on one machine with >= 24 GB VRAM and an

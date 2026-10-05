@@ -5,3 +5,4 @@
 /lean/.verify
 __pycache__/
 .pytest_cache/
+/result*

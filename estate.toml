@@ -61,7 +61,7 @@ id = "experiments"
 target = "experiments"
 authority = "non_authoritative_experiment"
 required = true
-current = ["benchmarks"]
+current = ["benchmarks", "experiments"]
 current_globs = ["research/tensor_frontier/*.md"]
 
 [[plane]]
@@ -83,7 +83,7 @@ id = "tooling"
 target = "tools"
 authority = "repository_tooling"
 required = true
-current = ["tools", "gpu"]
+current = ["tools", "gpu", "flake.nix"]
 
 [[plane]]
 id = "docs"

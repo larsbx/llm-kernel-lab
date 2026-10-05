@@ -31,11 +31,11 @@
           pkgs.python3;
 
       src = nixpkgs.lib.fileset.toSource {
-        root = ./micro;
+        root = ./experiments/micro_train;
         fileset = nixpkgs.lib.fileset.unions [
-          ./micro/pyproject.toml
-          ./micro/micro_train
-          ./micro/tests
+          ./experiments/micro_train/pyproject.toml
+          ./experiments/micro_train/micro_train
+          ./experiments/micro_train/tests
         ];
       };
 
@@ -177,7 +177,7 @@
               ))
               pkgs.podman
             ];
-            shellHook = "export PYTHONPATH=$PWD/micro''${"PYTHONPATH:+:$PYTHONPATH"}";
+            shellHook = ''export PYTHONPATH="$PWD/experiments/micro_train''${PYTHONPATH:+:$PYTHONPATH}"'';
           };
         }
       );

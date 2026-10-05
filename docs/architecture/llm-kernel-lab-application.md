@@ -47,10 +47,10 @@ computation cannot substitute for that boundary.
 | reference | `tensor_lab/` | `reference/` | exact executable reference semantics |
 | generation | `prover_loop/` | `generation/` | candidate generation and verification orchestration |
 | oracles | `mojo/` | `oracles/` | non-authoritative high-performance research computation |
-| experiments | `research/tensor_frontier/*.md`, `benchmarks/` | `experiments/` | research programmes and benchmark experiments |
+| experiments | `research/tensor_frontier/*.md`, `benchmarks/`, `experiments/` | `experiments/` | research programmes, benchmark experiments, and the micro LM / classifier pipeline (`experiments/micro_train/`) |
 | conformance | `tests/` | `conformance/` | regression and boundary tests |
 | evidence | `results/`, `problems/` | `evidence/` | benchmark inputs and generated evidence |
-| tooling | `tools/`, `gpu/` | `tools/` | audits, preparation, training and run orchestration |
+| tooling | `tools/`, `gpu/`, `flake.nix` | `tools/` | audits, preparation, training, run orchestration, and container provisioning |
 | docs | `README.md` | `docs/` | exposition |
 
 The map is transitional. No mass move is part of the adoption PR.

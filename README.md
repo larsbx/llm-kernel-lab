@@ -59,8 +59,8 @@ minutes on CPU. Both are one `--model` away on a GPU box.
 ## Micro LLM / classifier container
 
 `flake.nix` provisions a podman container for a from-scratch micro LM /
-text-classifier pipeline (`micro/`): `nix run .#run -- lm --data corpus.txt --out runs/lm`.
-See `micro/README.md`.
+text-classifier pipeline (`experiments/micro_train/`, a non-authoritative experiment):
+`nix run .#run -- lm --data corpus.txt --out runs/lm`. See `experiments/micro_train/README.md`.
 
 ## Round 1 on a GPU box
 

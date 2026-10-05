@@ -7,6 +7,8 @@ In the estate layout (`estate.toml`) this lives in the **experiments** plane:
 non-authoritative. Nothing it trains or measures is proof evidence; Lean stays
 the only acceptance authority in this repository.
 
+Milestones and their exit criteria: [ROADMAP.md](ROADMAP.md).
+
 Models are small transformers trained from scratch on UTF-8 bytes (vocabulary
 256), so nothing is downloaded at train time and any script or symbol has one
 encoding. Two modes:

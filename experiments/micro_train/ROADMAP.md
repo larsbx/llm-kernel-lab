@@ -25,7 +25,7 @@ Known gaps, each owned by a milestone below:
 | --- | --- |
 | a saved model cannot be loaded back; no `predict` | M1 |
 | no `flake.lock`; metrics record no provenance; no CI for the flake | M2 |
-| the classifier is scored on one held-out file that also steers tuning; nothing checks split overlap or repeated test reads; no baseline, no uncertainty | M3 |
+| the classifier is scored on one held-out file that also steers tuning; no split-overlap check, frozen-artifact verification, or authoritative test reservation; no baseline, no uncertainty | M3 |
 | only synthetic toy data | M4 |
 | evaluation loads every row into memory (`load_labelled` reads the whole file) and runs the eval set as one batch; no validation-based stopping, schedule, or resume | M5 |
 | CUDA image evaluates but has never been built or run | M7 |
@@ -50,7 +50,9 @@ smoke run.
 
 ## M2: Reproducible runs
 
-**Goal.** Any number in this repository can be regenerated from what it records.
+**Goal.** Training and validation numbers can be regenerated from their records;
+final-test provenance and committed reports are auditable under M3's one-attempt
+rule.
 
 - Commit `flake.lock` (first `nix` command on a machine that can reach
   `github:NixOS/nixpkgs`).
@@ -67,49 +69,154 @@ does not match its data fails `predict --verify`.
 
 ## M3: Honest classifier evaluation
 
-**Goal.** A reported test score is the first and only recorded read of a split
-that is disjoint from everything the model was selected on.
+**Goal.** A reported test score comes from the first and only recorded evaluation
+attempt on a split disjoint from everything the models were selected on. That
+attempt evaluates one frozen group: the selected model, both baselines, and any
+other comparisons declared before test access.
 
-A separate command alone guarantees neither: `--val` and `--test` can name the same
-data, and `evaluate` can be rerun while hyperparameters are still moving. So the
-protocol is enforced, not documented:
+M3 is pending. A separate command and a branch-local ledger do not enforce this
+goal. Its implementation must enforce the following protocol:
 
 - **Split disjointness.** Every command that reads more than one split refuses if
   two of them resolve to the same file or the same content (SHA-256), or if any
   row's text, after Unicode NFC and whitespace normalisation, occurs in more than
   one of train, val and test. Near-duplicates are out of scope and say so in the
-  report.
+  report. Test-side content and row checks run only after the reservation below;
+  the check itself spends the attempt even if it finds overlap.
 - **Selection never sees test.** `train` and `classify` accept `--train` and
   `--val` only; early stopping and checkpoint choice use `--val`.
-- **Freeze, then read once.** `micro-train freeze <run>` records the selected
-  model's weight hash, config, val metrics, and the normalised row hashes of its
-  train and val splits. `micro-train evaluate --final --test FILE <run>` refuses
-  an unfrozen run, checks each test row against those hashes as it streams past
-  (so the test-side check retains nothing), then appends
-  `{test_sha256, model_sha256, frozen_at, evaluated_at}` to
-  `results/micro/<dataset>/test-ledger.jsonl` and refuses if that test hash already
-  has an entry. A spent test split is replaced, not reread.
-- **The ledger is append-only in git.** A CI check compares the ledger with the
-  base branch and fails on any change other than appended lines, so a second read
-  cannot be erased to make room for a better one.
-- **Stated limit.** Nothing in-repo can detect the test file being read outside
-  the tool. The claim is therefore exactly the goal above: first and only
-  *recorded* read, of a model frozen before it.
+- **Trusted split identity.** Before model selection, register a dataset manifest
+  with the evaluation authority: dataset/version, the SHA-256 of the exact test
+  JSONL bytes, and an immutable object containing those bytes. The evaluator gets
+  the expected hash from that manifest, never from a caller-supplied hash or by
+  scanning the selected test file before reservation. `evaluate --final` takes
+  `--dataset NAME` and resolves its immutable input through the registered
+  manifest. The evaluator cannot replace the manifest or repin a spent split.
+  Paths, dataset aliases, run IDs and branches are not reservation keys; the same
+  test-byte hash has one key across the project.
+- **Immutable freeze receipt.** `micro-train freeze --dataset NAME <run>` registers
+  a receipt with the authority before any test access. It binds every model and
+  baseline in the group to its weight/artifact SHA-256, effective selection and evaluation
+  configuration, validation metrics, and train/val file and normalised row hashes.
+  Bind the intended dataset manifest's exact digest and test-byte SHA-256 in the
+  receipt as well; the group cannot be paired with a different manifest at
+  reservation time.
+  Include label order, tokenizer/preprocessing, context/truncation, checkpoint
+  choice, calibration/decision rules, metric/bootstrap settings and seeds, and
+  M2's code/environment provenance. Hash the configuration's versioned canonical
+  encoding. Store the receipt immutably by digest; editing a local receipt or
+  calling `freeze` again cannot rewrite the registered one. Preserve the complete
+  normalised train/val row-hash sets as content-addressed immutable artifacts
+  referenced by the receipt; an aggregate digest alone cannot answer membership
+  queries. Final evaluation verifies and loads those sets without needing the
+  original train/val files to remain at their old paths.
+- **Verify before requesting test access.** `micro-train evaluate --final
+  --dataset NAME <run>` retrieves the registered receipt and refuses an unfrozen
+  run, changed weights or baseline artifacts, or any effective configuration mismatch,
+  including CLI overrides and code/environment provenance. Verify and load the
+  same immutable artifact snapshots that inference will use; do not hash a path
+  and then reopen mutable contents. Missing or corrupt frozen row-hash sets also
+  refuse here. The requested dataset's registered manifest digest and test hash
+  must match the receipt before reservation; the authority enforces that binding
+  when accepting the reservation.
+  These refusals happen before reservation and before any test bytes are opened.
+- **Atomic reservation outside feature branches.** All evaluators use one
+  protected, durable authority shared by branches, clones, machines and workers
+  on the protected `ledger/test-reads` ref of the configured origin repository.
+  Its repository identity is trusted configuration, not a caller-selectable
+  remote. Manifest registrations, freeze receipts and evaluation events live
+  there, independently of feature-branch manifests and history. An atomic
+  insert-if-absent on `test_sha256` records
+  `{attempt_id, test_sha256, manifest_sha256, freeze_receipt_sha256, reserved_at,
+  status: reserved}` before opening test bytes, parsing rows or running inference.
+  A durable successful reservation is required; an existing key, unavailable
+  authority or uncertain commit outcome fails closed with no test access. There
+  is no branch-local/offline fallback. The store must retain reservations from
+  failed runs and abandoned branches; no deletion, lease expiry or reset makes
+  a consumed hash available again. State transitions and their append-only audit
+  events commit atomically.
+- **Authoritative ref updates.** Fetch the authority's current tip, validate the
+  requested append against that complete history, and create a commit whose
+  parent is exactly that tip. Push without force using that expected old ref
+  value; a changed tip rejects the update. Fetch and revalidate after a rejected
+  push, refusing if the hash is already reserved. Required server-side checks
+  validate append-only history, unique reservations and legal state transitions
+  before accepting an update. Protection forbids force-pushes and deletion;
+  missing protection or validation fails closed. A non-force push alone does not
+  validate event contents. A report and its completion event are committed
+  together in one accepted ref update.
+- **One start, one pass.** Only the reservation winner may atomically transition
+  its attempt from `reserved` to `running`; this transition grants one evaluator
+  permission to open the split after an acknowledged durable update. An uncertain
+  start outcome permits no test access and no repeat start. A retry of a
+  reservation RPC may inspect the same attempt but cannot grant another start.
+  First verify the complete raw-byte hash against the trusted pin without parsing
+  or inference, using bounded buffers.
+  Then stream rows from that same immutable input snapshot, checking overlap
+  against the union of the group's frozen train/val row hashes and checking
+  labels before scoring each batch. Raw integrity verification is part of this
+  recorded attempt; it does not authorize a second parsing/scoring pass. The
+  entire frozen group is scored together in that pass, not by separate final
+  invocations for each baseline or comparison.
+- **Failures consume the reservation.** Malformed JSON, unknown labels, overlap,
+  digest mismatch, inference errors and crashes after reservation all leave the
+  hash consumed. Append a terminal `failed` event when possible; a crash leaving
+  `reserved` or `running` still blocks all retries. Never resume test parsing or
+  inference after interruption, even for the same receipt. Inspecting status or
+  retrieving an already committed report is allowed without reopening the split.
+  A replacement split needs a newly registered, distinct hash.
+- **Publish only committed results.** Keep row content, predictions and partial
+  scores out of stdout, logs and reports. Only after all input and disjointness
+  checks pass does the authority durably commit the complete report and terminal
+  `succeeded` event bound to the reservation and freeze receipt; then expose the
+  report. Completion is idempotent and never repeats inference. A failed attempt
+  publishes failure metadata, not scores.
+- **Git ledger is an evidence mirror.** Export authority events, including failed
+  and incomplete attempts, to `results/micro/<dataset>/test-ledger.jsonl`. CI
+  retains the base-branch append-only check and verifies exported receipt/event
+  identities against the authority; missing history or a forged success cannot
+  make a score reportable. Git history cannot grant or release reservations.
+- **Stated limit.** This enforces one recorded attempt through the authorized
+  evaluator, not detection of reads outside it. The report names that limit and
+  the near-duplicate limit. M3 is not complete without the shared authority and
+  the acceptance tests below; the repository layout audit alone does not certify
+  this protocol.
 - Metrics: accuracy, macro-F1, per-class precision/recall, confusion matrix,
   expected calibration error; 95% bootstrap intervals on accuracy and macro-F1.
 - Baselines on the same splits: majority class, and byte n-gram logistic
-  regression.
+  regression, selected on train/val and frozen into the same group before the
+  final attempt.
 
-**Exit criteria.** Tests show each refusal: `--val` and `--test` naming the same file;
-identical content under two paths; one shared row across train and test after
-normalisation; `--final` on an unfrozen run; a second `--final` on the same test
-hash; and the CI ledger check failing on an edited or deleted line. On a fixed
-dataset the report shows the model and both baselines with intervals, the ledger
-entry it came from, and plainly whether the model's interval clears the stronger
-baseline's. A label present in test but not train fails closed (as eval does
-today).
+**Exit criteria.** Use synthetic test fixtures, an instrumented test opener,
+parser and inference call counters, and two clones of a bare origin with the
+authority ref's production validation and protection rules enabled. Verify those
+rules on the deployed authority as well. The following acceptance tests must
+pass; assertions cover ordering and durable state, not just exit codes.
 
-**Evidence.** `results/micro/<dataset>/report.json` and a rendered table.
+| Attempt / fault injection | Required observation |
+| --- | --- |
+| Same file for val/test, identical bytes at two paths, or a shared normalised row in train/test or val/test | Refused; any test-byte read is preceded by reservation; failures discovered after reservation keep the hash consumed and publish no score. |
+| Unfrozen run; mutated `model.safetensors`, baseline artifact, config, label order or CLI selection override; edited local freeze receipt; wrong dataset manifest/hash | Refused before reservation; zero test opens, parses and inference calls; another dataset's key remains unspent. |
+| Swap a model/config path between verification and load | Either rejected before test access or the verified immutable snapshot alone is evaluated; substituted artifacts never reach inference. |
+| Move/delete the original train/val files; separately remove/corrupt a frozen row-hash artifact | Verified frozen sets still detect shared test rows after the originals disappear; missing/corrupt sets refuse before reservation and test access. |
+| Missing/untrusted manifest, caller-chosen test hash, or a changed test object at the pinned path | No caller pin is accepted; byte mismatch is detected after reservation but before parsing/inference; the hash remains consumed and no score appears. |
+| Repeat `--final` after success or failure, using another path, dataset alias, run, model, branch or clone | Reservation refused before the test opener, parser or inference is called. |
+| Malformed JSON or an unseen label after valid earlier batches; overlap found late; inference exception | Reservation precedes the first open/parse/inference; terminal failure stays recorded; no partial predictions or scores escape; another invocation cannot reread. |
+| Kill the process just after reservation, during evaluation, or before report commit | Durable reservation remains visible from another process; no expiry or retry permits another start or test read; no success report is published. |
+| Authority unavailable, or connection lost around reservation/start commit | No test access without acknowledged durable reservation and start; if committed, the key remains consumed; status/RPC retries cannot create a second start. |
+| Two synchronized processes on distinct feature branches/clones reserve the same test hash against the shared authority | Exactly one reservation and at most one start succeeds; the loser has zero test opens/parses/inference; abandoning the winner's branch does not release the key. |
+| Two workers try to start the same attempt, including a repeated successful reservation RPC | Exactly one `reserved` to `running` transition; at most one parsing/scoring pass. |
+| Lose the reply after a successful report commit, then retry completion or retrieve results | The same stored report and terminal event are returned; zero additional test opens or inference calls. |
+| Edit/delete a mirrored ledger line, omit an authority failure, forge a receipt/success event, or use a local fallback store | CI/report publication refuses the evidence; the authority's consumed key is unaffected. |
+| Push an edited/deleted authority event, a duplicate reservation or an illegal transition; force-push/delete the authority ref; disable its required validation or use another origin | The protected authority rejects invalid updates; final evaluation refuses absent protections or an untrusted authority; zero test access. |
+| Successful frozen model-plus-baselines group | One reservation and one scoring pass produce a complete report bound to unchanged artifact/config digests and the authority's success event. |
+
+On a fixed dataset the report shows the model and both baselines with intervals,
+the authoritative reservation, freeze receipt and completion event it came from,
+and plainly whether the model's interval clears the stronger baseline's.
+
+**Evidence.** Acceptance-test results and replayable authority event receipts;
+`results/micro/<dataset>/report.json`, the mirrored ledger and a rendered table.
 
 ## M4: Real datasets
 
@@ -134,9 +241,11 @@ host as well as the accelerator; training stays correct on M4-sized data.
 Batching inference alone does not bound host memory: `load_labelled` reads the
 whole file and keeps every row, text and label before evaluation starts. So:
 
-- **Streaming input.** Evaluation reads JSONL line by line into fixed-size batches;
-  nothing holds the full split. The unseen-label check runs on the fly against the
-  training label set (labels, not rows).
+- **Streaming input.** After M3's reservation, raw integrity verification uses
+  bounded buffers; the subsequent JSONL pass reads line by line into fixed-size
+  batches from the same immutable snapshot. Neither pass holds the full split.
+  The unseen-label check runs on the fly against the training label set (labels,
+  not rows).
 - **Streaming metrics.** Accuracy, per-class counts, the confusion matrix and
   calibration bins are running sums; bootstrap intervals use a streaming (Poisson)
   bootstrap with a fixed number of replicate counters instead of per-example
@@ -151,16 +260,17 @@ whole file and keeps every row, text and label before evaluation starts. So:
 - Early stopping and best-checkpoint selection on `--val`; checkpoint and
   `--resume`.
 
-**Exit criteria.** Evaluation on two eval sets differing in size by at least 10×
-shows the same peak host RSS and peak accelerator memory within a stated bound,
+**Exit criteria.** Evaluation on two synthetic eval fixtures differing in size by
+at least 10× shows the same peak host RSS and peak accelerator memory within a stated bound,
 with the reader and metric accumulators also checked under `tracemalloc`. Streaming
 metrics equal the in-memory computation on a set small enough for both, and the
 streaming bootstrap's intervals agree with the exact bootstrap within a stated
 tolerance. Resuming from a checkpoint reproduces an uninterrupted run's final
 metrics for the same seed.
 
-**Evidence.** Tests for batching and resume; an M3 report showing the effect of
-the schedule against the M4 baseline run.
+**Evidence.** Tests for batching and resume; an M3 report comparing the scheduled
+model and the fixed M4 baseline on one fresh holdout registered before M5 model
+selection. M4's final-test split remains spent.
 
 ## M6: Does LM pretraining help the classifier?
 
@@ -171,7 +281,10 @@ budgets?
 - `micro-train classify --init runs/lm` initialises the encoder from an LM run
   (same width/depth), fine-tuning with the existing head.
 - Sweep labelled-set size (e.g. 1%, 10%, 100%) × {scratch, pretrained}, 3 seeds
-  each.
+  each. Register a fresh holdout before M6 model selection and freeze the complete
+  comparison group against that manifest before its single M3 final attempt;
+  M4/M5's spent final splits and per-variant final invocations cannot supply this
+  comparison.
 
 **Exit criteria.** A results table with intervals over seeds and a stated verdict
 (helps / no measurable effect / hurts) per budget. A null result is an acceptable
@@ -216,4 +329,5 @@ M0 ─▶ M1 ─▶ M2 ─▶ M3 ─▶ M4 ─▶ M5 ─▶ M6 ─▶ M8
 ```
 
 M1 and M2 are small and unblock everything. M3 must precede any reported real-data
-number, and its ledger is what makes such a number reportable. M7 needs only M2 and can run whenever a GPU is available.
+number; its authoritative reservation and committed report make that number
+reportable. M7 needs only M2 and can run whenever a GPU is available.

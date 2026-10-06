@@ -81,29 +81,67 @@ protocol is enforced, not documented:
   report.
 - **Selection never sees test.** `train` and `classify` accept `--train` and
   `--val` only; early stopping and checkpoint choice use `--val`.
-- **Freeze, then read once.** `micro-train freeze <run>` records the selected
-  model's weight hash, config, val metrics, and the normalised row hashes of its
-  train and val splits. `micro-train evaluate --final --test FILE <run>` refuses
-  an unfrozen run, checks each test row against those hashes as it streams past
-  (so the test-side check retains nothing), then appends
-  `{test_sha256, model_sha256, frozen_at, evaluated_at}` to
-  `results/micro/<dataset>/test-ledger.jsonl` and refuses if that test hash already
-  has an entry. A spent test split is replaced, not reread.
-- **The ledger is append-only in git.** A CI check compares the ledger with the
-  base branch and fails on any change other than appended lines, so a second read
-  cannot be erased to make room for a better one.
-- **Stated limit.** Nothing in-repo can detect the test file being read outside
-  the tool. The claim is therefore exactly the goal above: first and only
-  *recorded* read, of a model frozen before it.
+- **Pinned test split.** The test split's SHA-256 comes from the committed dataset
+  manifest (M4's fetch pins; a hand-made set is pinned by committing its hash),
+  never from the file being evaluated. `evaluate --final` takes the dataset name
+  and resolves the file through the manifest.
+- **Freeze.** `micro-train freeze <run>` records the SHA-256 of the weights and of
+  every selection-relevant artifact (`config.json`, label map, tokenizer and
+  preprocessing settings, training arguments), the val metrics, and a digest of
+  the normalised train and val row hashes. The record is appended to the ledger
+  (below), so it cannot be rewritten after the test read.
+- **Final evaluation runs in this order**, each step only if the previous held:
+  1. *Verify.* Rehash the weights and selection-relevant artifacts and compare them
+     with the freeze record; any mismatch, or no freeze record, refuses. The test
+     file is not opened.
+  2. *Reserve.* Append `{event: reserved, test_sha256 (pinned), freeze_id,
+     reserved_at}` to the ledger; refuse if the pinned hash already has any entry.
+     Parsing and inference start only after the reservation is on the ledger.
+  3. *Read.* Stream the test rows, hashing bytes as they are read and checking
+     each row against the train and val hashes. Metrics accumulate but are neither
+     printed nor written.
+  4. *Record, then reveal.* At end of file, compare the streamed hash with the pin
+     and append the outcome: `completed` with the metrics, or `failed` with a reason
+     (hash mismatch, parse error, overlap, unseen label, crash). Only once the
+     outcome is on the ledger does the command print or write a report.
+
+  A reservation spends the split whatever happens next: a failed or interrupted
+  evaluation cannot be retried on the same data, so a bad first read cannot be
+  quietly replaced by a better second one. A spent split is replaced, not reread.
+- **One authoritative ledger, outside feature branches.** The ledger is the
+  protected branch `ledger/test-reads` on `origin` (no force-push, no deletion),
+  not a file on the evaluating branch. Each append is a commit on the fetched tip
+  pushed without force; git applies a ref update only if the ref still has the
+  expected old value, so appends are compare-and-swap. Of two evaluations of the
+  same split, from any branches or machines, exactly one push lands; the other
+  fetches, finds the reservation, and refuses. With `origin` unreachable, final
+  evaluation refuses; there is no offline mode.
+- **CI checks the ledger.** Every commit on `ledger/test-reads` only appends lines;
+  `results/micro/<dataset>/test-ledger.jsonl` on `main` is a copy of the ref and
+  must match it; every report under `results/micro/` cites a `completed` entry
+  whose freeze record matches the report's model; a reservation with no outcome is
+  listed as spent.
+- **Stated limits.** The ledger is as strong as the branch protection on its ref:
+  an administrator who disables it can rewrite history. Nothing in-repo can detect
+  the test file being read outside the tool. The claim is therefore exactly the
+  goal above: first and only *recorded* read, of a model whose frozen artifacts
+  were verified before that read.
 - Metrics: accuracy, macro-F1, per-class precision/recall, confusion matrix,
   expected calibration error; 95% bootstrap intervals on accuracy and macro-F1.
 - Baselines on the same splits: majority class, and byte n-gram logistic
   regression.
 
-**Exit criteria.** Tests show each refusal: `--val` and `--test` naming the same file;
-identical content under two paths; one shared row across train and test after
-normalisation; `--final` on an unfrozen run; a second `--final` on the same test
-hash; and the CI ledger check failing on an edited or deleted line. On a fixed
+**Exit criteria.** Tests (with a local bare repository standing in for `origin`)
+show each refusal: `--val` and `--test` naming the same file; identical content
+under two paths; one shared row across train and test after normalisation;
+`--final` on an unfrozen run; weights, `config.json` or the label map changed after
+freezing, each refused before any reservation (ledger unchanged); a second
+`--final` on the same pinned hash; two concurrent `--final` runs on the same split
+from two branches, of which exactly one reserves; a test file that does not match
+its pin, a parse error mid-stream, and a killed process, each leaving a
+reservation, a `failed` outcome (or none, for the kill), no revealed score, and the
+split refused afterwards; and the CI ledger check failing on an edited or deleted
+line, a force-pushed ref, or a `main` copy that diverges from it. On a fixed
 dataset the report shows the model and both baselines with intervals, the ledger
 entry it came from, and plainly whether the model's interval clears the stronger
 baseline's. A label present in test but not train fails closed (as eval does

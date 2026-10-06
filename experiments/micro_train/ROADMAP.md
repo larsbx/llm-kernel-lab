@@ -50,7 +50,9 @@ smoke run.
 
 ## M2: Reproducible runs
 
-**Goal.** Any number in this repository can be regenerated from what it records.
+**Goal.** Training and validation numbers can be regenerated from their records;
+final-test provenance and committed reports are auditable under M3's one-attempt
+rule.
 
 - Commit `flake.lock` (first `nix` command on a machine that can reach
   `github:NixOS/nixpkgs`).
@@ -90,12 +92,15 @@ goal. Its implementation must enforce the following protocol:
   scanning the selected test file before reservation. `evaluate --final` takes
   `--dataset NAME` and resolves its immutable input through the registered
   manifest. The evaluator cannot replace the manifest or repin a spent split.
-  Paths, dataset aliases, run IDs and branches
-  are not reservation keys; the same test-byte hash has one key across the project.
-- **Immutable freeze receipt.** `micro-train freeze <run>` registers a receipt
-  with the authority before any test access. It binds every model and baseline
-  in the group to its weight/artifact SHA-256, effective selection and evaluation
+  Paths, dataset aliases, run IDs and branches are not reservation keys; the same
+  test-byte hash has one key across the project.
+- **Immutable freeze receipt.** `micro-train freeze --dataset NAME <run>` registers
+  a receipt with the authority before any test access. It binds every model and
+  baseline in the group to its weight/artifact SHA-256, effective selection and evaluation
   configuration, validation metrics, and train/val file and normalised row hashes.
+  Bind the intended dataset manifest's exact digest and test-byte SHA-256 in the
+  receipt as well; the group cannot be paired with a different manifest at
+  reservation time.
   Include label order, tokenizer/preprocessing, context/truncation, checkpoint
   choice, calibration/decision rules, metric/bootstrap settings and seeds, and
   M2's code/environment provenance. Hash the configuration's versioned canonical
@@ -106,12 +111,14 @@ goal. Its implementation must enforce the following protocol:
   queries. Final evaluation verifies and loads those sets without needing the
   original train/val files to remain at their old paths.
 - **Verify before requesting test access.** `micro-train evaluate --final
-  --dataset NAME <run>` retrieves the registered receipt and refuses an unfrozen run,
-  changed weights or baseline artifacts, or any effective configuration mismatch,
+  --dataset NAME <run>` retrieves the registered receipt and refuses an unfrozen
+  run, changed weights or baseline artifacts, or any effective configuration mismatch,
   including CLI overrides and code/environment provenance. Verify and load the
   same immutable artifact snapshots that inference will use; do not hash a path
   and then reopen mutable contents. Missing or corrupt frozen row-hash sets also
-  refuse here.
+  refuse here. The requested dataset's registered manifest digest and test hash
+  must match the receipt before reservation; the authority enforces that binding
+  when accepting the reservation.
   These refusals happen before reservation and before any test bytes are opened.
 - **Atomic reservation outside feature branches.** All evaluators use one
   protected, durable authority shared by branches, clones, machines and workers
@@ -143,8 +150,8 @@ goal. Its implementation must enforce the following protocol:
   permission to open the split after an acknowledged durable update. An uncertain
   start outcome permits no test access and no repeat start. A retry of a
   reservation RPC may inspect the same attempt but cannot grant another start.
-  First verify the complete raw-byte hash
-  against the trusted pin without parsing or inference, using bounded buffers.
+  First verify the complete raw-byte hash against the trusted pin without parsing
+  or inference, using bounded buffers.
   Then stream rows from that same immutable input snapshot, checking overlap
   against the union of the group's frozen train/val row hashes and checking
   labels before scoring each batch. Raw integrity verification is part of this
@@ -189,7 +196,7 @@ pass; assertions cover ordering and durable state, not just exit codes.
 | Attempt / fault injection | Required observation |
 | --- | --- |
 | Same file for val/test, identical bytes at two paths, or a shared normalised row in train/test or val/test | Refused; any test-byte read is preceded by reservation; failures discovered after reservation keep the hash consumed and publish no score. |
-| Unfrozen run; mutated `model.safetensors`, baseline artifact, config, label order or CLI selection override; edited local freeze receipt | Refused before reservation; zero test opens, parses and inference calls. |
+| Unfrozen run; mutated `model.safetensors`, baseline artifact, config, label order or CLI selection override; edited local freeze receipt; wrong dataset manifest/hash | Refused before reservation; zero test opens, parses and inference calls; another dataset's key remains unspent. |
 | Swap a model/config path between verification and load | Either rejected before test access or the verified immutable snapshot alone is evaluated; substituted artifacts never reach inference. |
 | Move/delete the original train/val files; separately remove/corrupt a frozen row-hash artifact | Verified frozen sets still detect shared test rows after the originals disappear; missing/corrupt sets refuse before reservation and test access. |
 | Missing/untrusted manifest, caller-chosen test hash, or a changed test object at the pinned path | No caller pin is accepted; byte mismatch is detected after reservation but before parsing/inference; the hash remains consumed and no score appears. |
@@ -253,16 +260,17 @@ whole file and keeps every row, text and label before evaluation starts. So:
 - Early stopping and best-checkpoint selection on `--val`; checkpoint and
   `--resume`.
 
-**Exit criteria.** Evaluation on two eval sets differing in size by at least 10×
-shows the same peak host RSS and peak accelerator memory within a stated bound,
+**Exit criteria.** Evaluation on two synthetic eval fixtures differing in size by
+at least 10× shows the same peak host RSS and peak accelerator memory within a stated bound,
 with the reader and metric accumulators also checked under `tracemalloc`. Streaming
 metrics equal the in-memory computation on a set small enough for both, and the
 streaming bootstrap's intervals agree with the exact bootstrap within a stated
 tolerance. Resuming from a checkpoint reproduces an uninterrupted run's final
 metrics for the same seed.
 
-**Evidence.** Tests for batching and resume; an M3 report showing the effect of
-the schedule against the M4 baseline run.
+**Evidence.** Tests for batching and resume; an M3 report comparing the scheduled
+model and the fixed M4 baseline on one fresh holdout registered before M5 model
+selection. M4's final-test split remains spent.
 
 ## M6: Does LM pretraining help the classifier?
 
@@ -273,8 +281,10 @@ budgets?
 - `micro-train classify --init runs/lm` initialises the encoder from an LM run
   (same width/depth), fine-tuning with the existing head.
 - Sweep labelled-set size (e.g. 1%, 10%, 100%) × {scratch, pretrained}, 3 seeds
-  each. Freeze the complete comparison group before its single M3 final attempt;
-  do not spend the same test hash separately for each size, variant or seed.
+  each. Register a fresh holdout before M6 model selection and freeze the complete
+  comparison group against that manifest before its single M3 final attempt;
+  M4/M5's spent final splits and per-variant final invocations cannot supply this
+  comparison.
 
 **Exit criteria.** A results table with intervals over seeds and a stated verdict
 (helps / no measurable effect / hurts) per budget. A null result is an acceptable

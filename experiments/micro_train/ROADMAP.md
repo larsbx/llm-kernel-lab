@@ -25,9 +25,9 @@ Known gaps, each owned by a milestone below:
 | --- | --- |
 | a saved model cannot be loaded back; no `predict` | M1 |
 | no `flake.lock`; metrics record no provenance; no CI for the flake | M2 |
-| the classifier is scored on one held-out file that also steers tuning, with no baseline and no uncertainty | M3 |
+| the classifier is scored on one held-out file that also steers tuning; nothing checks split overlap or repeated test reads; no baseline, no uncertainty | M3 |
 | only synthetic toy data | M4 |
-| evaluation runs the whole eval set as one batch; no validation-based stopping, schedule, or resume | M5 |
+| evaluation loads every row into memory (`load_labelled` reads the whole file) and runs the eval set as one batch; no validation-based stopping, schedule, or resume | M5 |
 | CUDA image evaluates but has never been built or run | M7 |
 
 ## M1: Load and predict
@@ -67,20 +67,47 @@ does not match its data fails `predict --verify`.
 
 ## M3: Honest classifier evaluation
 
-**Goal.** A reported score means what it says.
+**Goal.** A reported test score is the first and only recorded read of a split
+that is disjoint from everything the model was selected on.
 
-- Three-way split: `--train`, `--val` (model selection, early stopping), `--test`
-  (read once, at the end). A run that tunes on `--test` is refused by
-  construction: the test file is only opened by `micro-train evaluate`.
+A separate command alone guarantees neither: `--val` and `--test` can name the same
+data, and `evaluate` can be rerun while hyperparameters are still moving. So the
+protocol is enforced, not documented:
+
+- **Split disjointness.** Every command that reads more than one split refuses if
+  two of them resolve to the same file or the same content (SHA-256), or if any
+  row's text, after Unicode NFC and whitespace normalisation, occurs in more than
+  one of train, val and test. Near-duplicates are out of scope and say so in the
+  report.
+- **Selection never sees test.** `train` and `classify` accept `--train` and
+  `--val` only; early stopping and checkpoint choice use `--val`.
+- **Freeze, then read once.** `micro-train freeze <run>` records the selected
+  model's weight hash, config, val metrics, and the normalised row hashes of its
+  train and val splits. `micro-train evaluate --final --test FILE <run>` refuses
+  an unfrozen run, checks each test row against those hashes as it streams past
+  (so the test-side check retains nothing), then appends
+  `{test_sha256, model_sha256, frozen_at, evaluated_at}` to
+  `results/micro/<dataset>/test-ledger.jsonl` and refuses if that test hash already
+  has an entry. A spent test split is replaced, not reread.
+- **The ledger is append-only in git.** A CI check compares the ledger with the
+  base branch and fails on any change other than appended lines, so a second read
+  cannot be erased to make room for a better one.
+- **Stated limit.** Nothing in-repo can detect the test file being read outside
+  the tool. The claim is therefore exactly the goal above: first and only
+  *recorded* read, of a model frozen before it.
 - Metrics: accuracy, macro-F1, per-class precision/recall, confusion matrix,
   expected calibration error; 95% bootstrap intervals on accuracy and macro-F1.
 - Baselines on the same splits: majority class, and byte n-gram logistic
   regression.
 
-**Exit criteria.** On a fixed dataset the report shows the model and both
-baselines with intervals, and states plainly whether the model's interval clears
-the stronger baseline's. A label present in test but not train fails closed (as
-eval does today).
+**Exit criteria.** Tests show each refusal: `--val` and `--test` naming the same file;
+identical content under two paths; one shared row across train and test after
+normalisation; `--final` on an unfrozen run; a second `--final` on the same test
+hash; and the CI ledger check failing on an edited or deleted line. On a fixed
+dataset the report shows the model and both baselines with intervals, the ledger
+entry it came from, and plainly whether the model's interval clears the stronger
+baseline's. A label present in test but not train fails closed (as eval does
+today).
 
 **Evidence.** `results/micro/<dataset>/report.json` and a rendered table.
 
@@ -101,16 +128,36 @@ dataset has an M3 report.
 
 ## M5: Training that scales past toys
 
-**Goal.** Training and evaluation stay correct and bounded on M4-sized data.
+**Goal.** Evaluation runs in memory bounded independently of eval-set size, on the
+host as well as the accelerator; training stays correct on M4-sized data.
 
-- Batched evaluation with fixed memory (today the whole eval set is one tensor).
+Batching inference alone does not bound host memory: `load_labelled` reads the
+whole file and keeps every row, text and label before evaluation starts. So:
+
+- **Streaming input.** Evaluation reads JSONL line by line into fixed-size batches;
+  nothing holds the full split. The unseen-label check runs on the fly against the
+  training label set (labels, not rows).
+- **Streaming metrics.** Accuracy, per-class counts, the confusion matrix and
+  calibration bins are running sums; bootstrap intervals use a streaming (Poisson)
+  bootstrap with a fixed number of replicate counters instead of per-example
+  storage.
+- **Batched inference** at a fixed batch size (today the whole eval set is one
+  tensor).
+- **Scoped exception.** Training still loads its split, since it samples rows at
+  random; that is a stated bound on training, not on evaluation. M3's
+  disjointness check keeps one 32-byte hash per train and val row, likewise
+  linear and stated.
 - Warmup + cosine schedule, gradient clipping, class weighting option.
 - Early stopping and best-checkpoint selection on `--val`; checkpoint and
   `--resume`.
 
-**Exit criteria.** Peak memory of evaluation is independent of eval-set size
-(measured at two sizes). Resuming from a checkpoint reproduces an uninterrupted
-run's final metrics for the same seed.
+**Exit criteria.** Evaluation on two eval sets differing in size by at least 10×
+shows the same peak host RSS and peak accelerator memory within a stated bound,
+with the reader and metric accumulators also checked under `tracemalloc`. Streaming
+metrics equal the in-memory computation on a set small enough for both, and the
+streaming bootstrap's intervals agree with the exact bootstrap within a stated
+tolerance. Resuming from a checkpoint reproduces an uninterrupted run's final
+metrics for the same seed.
 
 **Evidence.** Tests for batching and resume; an M3 report showing the effect of
 the schedule against the M4 baseline run.
@@ -169,4 +216,4 @@ M0 ─▶ M1 ─▶ M2 ─▶ M3 ─▶ M4 ─▶ M5 ─▶ M6 ─▶ M8
 ```
 
 M1 and M2 are small and unblock everything. M3 must precede any reported real-data
-number. M7 needs only M2 and can run whenever a GPU is available.
+number, and its ledger is what makes such a number reportable. M7 needs only M2 and can run whenever a GPU is available.

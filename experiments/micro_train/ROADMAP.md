@@ -100,13 +100,18 @@ goal. Its implementation must enforce the following protocol:
   choice, calibration/decision rules, metric/bootstrap settings and seeds, and
   M2's code/environment provenance. Hash the configuration's versioned canonical
   encoding. Store the receipt immutably by digest; editing a local receipt or
-  calling `freeze` again cannot rewrite the registered one.
+  calling `freeze` again cannot rewrite the registered one. Preserve the complete
+  normalised train/val row-hash sets as content-addressed immutable artifacts
+  referenced by the receipt; an aggregate digest alone cannot answer membership
+  queries. Final evaluation verifies and loads those sets without needing the
+  original train/val files to remain at their old paths.
 - **Verify before requesting test access.** `micro-train evaluate --final
   --dataset NAME <run>` retrieves the registered receipt and refuses an unfrozen run,
   changed weights or baseline artifacts, or any effective configuration mismatch,
   including CLI overrides and code/environment provenance. Verify and load the
   same immutable artifact snapshots that inference will use; do not hash a path
-  and then reopen mutable contents.
+  and then reopen mutable contents. Missing or corrupt frozen row-hash sets also
+  refuse here.
   These refusals happen before reservation and before any test bytes are opened.
 - **Atomic reservation outside feature branches.** All evaluators use one
   protected, durable authority shared by branches, clones, machines and workers
@@ -186,6 +191,7 @@ pass; assertions cover ordering and durable state, not just exit codes.
 | Same file for val/test, identical bytes at two paths, or a shared normalised row in train/test or val/test | Refused; any test-byte read is preceded by reservation; failures discovered after reservation keep the hash consumed and publish no score. |
 | Unfrozen run; mutated `model.safetensors`, baseline artifact, config, label order or CLI selection override; edited local freeze receipt | Refused before reservation; zero test opens, parses and inference calls. |
 | Swap a model/config path between verification and load | Either rejected before test access or the verified immutable snapshot alone is evaluated; substituted artifacts never reach inference. |
+| Move/delete the original train/val files; separately remove/corrupt a frozen row-hash artifact | Verified frozen sets still detect shared test rows after the originals disappear; missing/corrupt sets refuse before reservation and test access. |
 | Missing/untrusted manifest, caller-chosen test hash, or a changed test object at the pinned path | No caller pin is accepted; byte mismatch is detected after reservation but before parsing/inference; the hash remains consumed and no score appears. |
 | Repeat `--final` after success or failure, using another path, dataset alias, run, model, branch or clone | Reservation refused before the test opener, parser or inference is called. |
 | Malformed JSON or an unseen label after valid earlier batches; overlap found late; inference exception | Reservation precedes the first open/parse/inference; terminal failure stays recorded; no partial predictions or scores escape; another invocation cannot reread. |

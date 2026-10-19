@@ -35,21 +35,40 @@ def check_text(path: Path, text: str) -> list[str]:
             errors.append(f"{path}:{line}: forbidden control character U+{code:04X}")
 
     in_code = False
-    code_fence: str | None = None
+    code_fence_char: str | None = None
+    code_fence_length = 0
     in_display = False
     display_start = 0
 
     for line_number, line in enumerate(text.splitlines(), 1):
         stripped = line.strip()
+        fence_char: str | None = None
+        fence_length = 0
 
-        if stripped.startswith(BACKTICK_FENCE) or stripped.startswith(TILDE_FENCE):
-            marker = stripped[:3]
+        if stripped:
+            candidate = stripped[0]
+            if candidate in (chr(96), "~"):
+                while (
+                    fence_length < len(stripped)
+                    and stripped[fence_length] == candidate
+                ):
+                    fence_length += 1
+                if fence_length >= 3:
+                    fence_char = candidate
+
+        if fence_char is not None:
             if not in_code:
                 in_code = True
-                code_fence = marker
-            elif marker == code_fence:
+                code_fence_char = fence_char
+                code_fence_length = fence_length
+            elif (
+                fence_char == code_fence_char
+                and fence_length >= code_fence_length
+                and stripped[fence_length:] == ""
+            ):
                 in_code = False
-                code_fence = None
+                code_fence_char = None
+                code_fence_length = 0
             continue
 
         if in_code:

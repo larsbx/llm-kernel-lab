@@ -42,3 +42,22 @@ def test_markdown_math_audit_rejects_known_corruptions(tmp_path, text, expected)
     run = run_audit(bad)
     assert run.returncode == 1
     assert expected in run.stderr
+
+
+def test_markdown_math_audit_tracks_full_fence_length(tmp_path):
+    outer = "````"
+    inner = "```"
+    sample = "\n".join(
+        [
+            outer,
+            inner + "text",
+            "$",
+            inner,
+            outer,
+            "",
+        ]
+    )
+    doc = tmp_path / "nested-fence.md"
+    doc.write_text(sample, encoding="utf-8")
+    run = run_audit(doc)
+    assert run.returncode == 0, run.stderr

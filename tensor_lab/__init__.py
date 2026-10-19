@@ -11,10 +11,12 @@ from .algebraic import (
     rotor_compose,
     rotor_from_parameter,
 )
+from .tensors import mode_gram
 
 __all__ = [
     "bilinear",
     "gram_determinant",
+    "mode_gram",
     "normalize_weights",
     "power_sum",
     "projective_spread",

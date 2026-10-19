@@ -29,6 +29,11 @@ tt_local_update
 structured_reduce
 ```
 
+The first fully specified kernel contract is
+`MODE_GRAM_PROTOCOL.md`, which binds `mode_gram` to the exact rational
+reference predicate, deterministic comparison corpus, NumPy baseline, FP64
+agreement relation, and evidence ceiling before any Mojo implementation lands.
+
 ## Algebraic surface
 
 The kernel API should consume algebraic data directly where practical:

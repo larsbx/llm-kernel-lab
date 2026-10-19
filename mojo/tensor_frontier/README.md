@@ -57,3 +57,10 @@ duplicate an already optimized primitive.
 
 Benchmarks live in `../../benchmarks/tensor_frontier/` and must report both
 throughput and differential agreement with the declared reference predicate.
+
+## Implemented CPU experiment
+
+`mode_gram.mojo` implements all three FP64 mode Gram products using explicit
+Mojo layout handling and the existing LP64 CBLAS GEMM primitive. See
+[MODE_GRAM_IMPLEMENTATION.md](MODE_GRAM_IMPLEMENTATION.md) for the checked API,
+size guards, mandatory cross-language test lane and reproducible benchmark.

@@ -215,3 +215,17 @@ and `VECLIB_MAXIMUM_THREADS=1` before loading any provider. The archived runs
 retain their original environment metadata; they used the recorded system BLAS
 and OpenBLAS, not BLIS. This repair prevents uncontrolled alternative-provider
 runs and does not rewrite the historical measurements.
+
+The follow-up regression suite checks missing, zero and excessive settings for
+all five thread variables before provider discovery. Deterministic provider
+stubs verify that `actual_threads=1` requires a successful OpenBLAS runtime
+setter/getter check, that failed enforcement rejects the provider, and that
+providers without that API retain `actual_threads=null` with an explicit
+unverified-environment explanation. Environment settings are required controls,
+not an observation of the provider's actual runtime thread count.
+
+Follow-up local validation: 35 profiling tests passed; the complete repository
+suite passed with 191 passed and 6 skipped, including all 64 native Mojo tests.
+The four repository audits and `git diff --check` passed. This used Python
+3.12, NumPy 2.3.5 and Mojo 1.1.0 (8189361e); locked-nightly CI validation remains
+separate. The archived raw JSON and compressed runs are unchanged.

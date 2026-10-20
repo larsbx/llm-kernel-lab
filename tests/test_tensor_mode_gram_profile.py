@@ -1,6 +1,7 @@
 """Fail-closed numerical/provenance checks for the controlled CPU probes."""
 import ctypes
 import json
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -83,9 +84,9 @@ def test_smoke_report_and_hash_guard(monkeypatch, tmp_path):
         p.profile(library=binary, large=False)
 
 
-@pytest.mark.parametrize('key', ['BLIS_NUM_THREADS', 'VECLIB_MAXIMUM_THREADS'])
+@pytest.mark.parametrize('key', p.THREAD_KEYS)
 @pytest.mark.parametrize('value', [None, '2', '0'])
-def test_other_provider_thread_limits_required(monkeypatch, key, value):
+def test_all_provider_thread_limits_required(monkeypatch, key, value):
     for name in p.THREAD_KEYS:
         monkeypatch.setenv(name, '1')
     if value is None:
@@ -95,3 +96,55 @@ def test_other_provider_thread_limits_required(monkeypatch, key, value):
     monkeypatch.setattr(p, 'numpy_openblas', lambda: pytest.fail('loaded provider before guard'))
     with pytest.raises(ValueError, match=key):
         p.profile()
+
+
+@pytest.fixture
+def fake_blas(monkeypatch, tmp_path):
+    """Exercise metadata without depending on the host's BLAS implementation."""
+    def gemm():
+        pass
+    def syrk():
+        pass
+    library = SimpleNamespace(cblas_dgemm=gemm, cblas_dsyrk=syrk)
+    binary = tmp_path / 'libfake.so'
+    binary.write_bytes(b'fake BLAS for metadata tests')
+    monkeypatch.setattr(p.ct, 'CDLL', lambda _: library)
+    monkeypatch.setattr(p, 'symbol_path', lambda _: binary)
+    monkeypatch.setattr(p.subprocess, 'check_output', lambda *a, **k: 'fake dependencies')
+    return library
+
+
+def test_environment_limits_do_not_claim_verified_runtime_threads(fake_blas, monkeypatch):
+    for key in p.THREAD_KEYS:
+        monkeypatch.setenv(key, '1')
+    provider = p.Blas('libfake.so')
+    assert provider.thread_getter is None
+    assert provider.metadata['actual_threads'] is None
+    assert provider.metadata['thread_control'] == (
+        'unavailable; environment is recorded, not proof of thread count')
+
+
+@pytest.mark.parametrize('enforced', [True, False])
+def test_openblas_metadata_requires_runtime_enforcement(fake_blas, enforced):
+    threads = 8
+    requested = []
+    def setter(value):
+        nonlocal threads
+        requested.append(value)
+        if enforced:
+            threads = value
+    def getter():
+        return threads
+    fake_blas.openblas_set_num_threads = setter
+    fake_blas.openblas_get_num_threads = getter
+    fake_blas.openblas_get_config = lambda: b'fake OpenBLAS'
+    fake_blas.openblas_get_corename = lambda: b'fake CPU'
+    if enforced:
+        provider = p.Blas('libfake.so')
+        assert provider.thread_getter() == 1
+        assert provider.metadata['actual_threads'] == 1
+        assert provider.metadata['thread_control'] == 'OpenBLAS runtime API'
+    else:
+        with pytest.raises(RuntimeError, match='failed to enforce single-thread OpenBLAS'):
+            p.Blas('libfake.so')
+    assert requested == [1]

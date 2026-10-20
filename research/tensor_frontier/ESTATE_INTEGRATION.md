@@ -338,3 +338,27 @@ validation, run the canonical Pixi test and required native lanes with the pinne
 nightly. For deployment performance, repeat on a supported optimized LP64 BLAS,
 then consider guard-preserving scan/packing or primitive selection only if those
 measurements justify it. The private-symbol adapter is a controlled experiment.
+
+
+## Batched mode-Gram follow-up — 2026-10-20 UTC
+
+`perf/mode-gram-batched` is stacked on PR #17 (`perf/mode-gram-controlled`),
+which targets the baseline branch. #14, #15 and #17 remain open at this
+checkpoint. The native batch API remains an opt-in CPU experiment; merging
+a follow-up into its dependency branch does not integrate it into `main`.
+
+[Batch evidence](../../results/tensor_frontier/MODE_GRAM_BATCH_2026-10-20.md)
+shows measured benefits from amortizing native calls and reusing buffers on
+small/medium inputs. Fusion is optional because its benefit varies; a broad-run
+rectangular regression did not reproduce in a focused recheck. Larger GEMMs
+still often favor NumPy. Independent exact and NumPy checks remain in place,
+performance authority stays E0, and numerical replication stays at most E1.
+No domain ledger or theorem authority changes.
+
+Run the required batch native task and existing scalar/repository lanes with
+the locked compiler before claiming locked validation. Available Mojo 1.1.0
+checks do not satisfy that gate. No GPU is exposed here; the
+[GPU experiment contract](../../mojo/tensor_frontier/MODE_GRAM_BATCH.md#gpu-follow-up-boundary)
+requires actual hardware, FP64 correctness, independent vendor-library
+comparisons and separate resident/transfer-inclusive timings. It supplies no
+CUDA migration or GPU speedup evidence.

@@ -53,7 +53,7 @@ class MojoModeGramBatch:
     def workspace(self, shape, mode):
         return BatchWorkspace(self, shape, mode)
 
-    def __call__(self, batch, mode, *, fused=True):
+    def __call__(self, batch, mode, *, fused=False):
         array = prepare_batch(batch, mode)
         workspace = self.workspace(array.shape, mode)
         return workspace.compute(array, fused=fused)
@@ -72,7 +72,7 @@ class BatchWorkspace:
     def workspace_bytes(self):
         return self._output.nbytes + self._scratch.nbytes
 
-    def compute(self, batch, *, fused=True):
+    def compute(self, batch, *, fused=False):
         if type(fused) is not bool:
             raise ValueError('fused must be a bool')
         if not self._lock.acquire(blocking=False):

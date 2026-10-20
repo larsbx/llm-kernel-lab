@@ -91,7 +91,7 @@ def benchmark(scalar_library, batch_library, blas, warmup=5, iterations=30, roun
                 lanes=[
                     ('mojo_scalar_loop',lambda:np.stack([scalar(x,mode) for x in batch]),'scalar checked API per item; stack/output allocations'),
                     ('numpy_scalar_loop',lambda:np.stack([mode_gram_numpy(x,mode) for x in batch]),'existing scalar baseline per item; lacks finite guards'),
-                    ('mojo_batch_allocated',lambda:batched(batch,mode),'checked native batch; fused packing; workspace/output allocated per call'),
+                    ('mojo_batch_allocated',lambda:batched(batch,mode,fused=True),'checked native batch; fused packing; workspace/output allocated per call'),
                     ('mojo_batch_reuse_unfused',lambda:workspace.compute(batch,fused=False),'checked native batch; separate scan/pack; reusable buffers'),
                     ('mojo_batch_reuse_fused',lambda:workspace.compute(batch,fused=True),'checked native batch; fused scan/pack; reusable buffers'),
                     ('numpy_batch_reuse_checked',lambda:numpy_checked(batch,mode,numpy_output),'vectorized NumPy matmul; input/output finite guards; reused output; mode-1 unfolding may allocate'),

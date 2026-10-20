@@ -15,24 +15,27 @@ SOURCE = ROOT / "mojo/tensor_frontier/mode_gram.mojo"
 DEFAULT_OUTPUT = ROOT / ".build/tensor_frontier/libmode_gram.so"
 
 
-def build(output=DEFAULT_OUTPUT, mojo=None, blas=None):
+def build(output=DEFAULT_OUTPUT, mojo=None, blas=None, *, source=SOURCE, dependencies=()):
     mojo = mojo or os.environ.get("MOJO", "mojo")
     compiler = shutil.which(mojo)
     if compiler is None:
         raise RuntimeError(f"Mojo compiler unavailable: {mojo}")
+    source = Path(source).resolve()
     output = Path(output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     # Must expose cblas_dgemm with LP64 int dimensions, NOT ILP64 *_64 symbols.
     blas = blas or os.environ.get("MODE_GRAM_BLAS", "libblas.so.3")
     link_arg = str(Path(blas).resolve()) if "/" in blas else "-l:" + blas
-    command = [compiler, "build", str(SOURCE), "--emit", "shared-lib", "-O3",
+    command = [compiler, "build", str(source), "--emit", "shared-lib", "-O3",
                "-Xlinker", link_arg, "-o", str(output)]
     subprocess.run(command, check=True)
     metadata = {
         "command": command,
         "compiler_version": subprocess.check_output([compiler, "--version"], text=True).strip(),
         "blas_link_argument": link_arg,
-        "source_sha256": hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
+        "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+        "sources_sha256": {str(Path(p).resolve().relative_to(ROOT)):
+            hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in (source, *dependencies)},
         "binary_sha256": hashlib.sha256(output.read_bytes()).hexdigest(),
         "implementation_revision": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),

@@ -32,6 +32,9 @@ tensor-test = "python tools/audit_transcendentals.py && python tools/check_markd
 tensor-mode-gram-build = "python tools/build_mode_gram.py"
 tensor-mode-gram-test = "MOJO_REQUIRED=1 python -m pytest -q tests/test_tensor_mode_gram_mojo.py"
 tensor-mode-gram-bench = { cmd = "python -m benchmarks.tensor_frontier.benchmark_mode_gram", depends-on = ["tensor-mode-gram-build"] }
+tensor-mode-gram-batch-build = "python tools/build_mode_gram_batch.py"
+tensor-mode-gram-batch-test = "MOJO_REQUIRED=1 python -m pytest -q tests/test_tensor_mode_gram_batch.py tests/test_tensor_mode_gram_batch_benchmark.py"
+tensor-mode-gram-batch-bench = "python -m benchmarks.tensor_frontier.benchmark_mode_gram_batch"
 tensor-mode-gram-profile = "python -m benchmarks.tensor_frontier.profile_mode_gram"
 tensor-mode-gram-baseline = "python -m pytest -q tests/test_tensor_mode_gram_baseline.py"
 tensor-plan = "python benchmarks/tensor_frontier/harness.py --list"

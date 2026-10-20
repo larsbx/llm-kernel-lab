@@ -20,3 +20,5 @@ jobs:
         run: pixi run test
       - name: Require compiled Mojo differential tests
         run: pixi run tensor-mode-gram-test
+      - name: Require compiled Mojo batch differential tests
+        run: pixi run tensor-mode-gram-batch-test

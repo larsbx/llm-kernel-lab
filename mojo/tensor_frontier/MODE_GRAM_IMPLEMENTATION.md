@@ -127,3 +127,14 @@ portable deployment dependency or a change to the default system-BLAS build.
 Stage measurements overlap and have different cache/dispatch effects. They must
 not be added or subtracted as an exact decomposition. The saved investigation
 uses the available Mojo 1.1.0 release; locked-nightly validation is still pending.
+
+
+## Batched CPU follow-up
+
+The optional [batch/workspace API](MODE_GRAM_BATCH.md) amortizes the native
+boundary across homogeneous batches and reuses output/packing storage. Finite
+checks remain mandatory; mode-1 scan/packing fusion is explicit opt-in. The
+[batch report](../../results/tensor_frontier/MODE_GRAM_BATCH_2026-10-20.md) records
+matched-provider comparisons against both repeated scalar APIs and checked
+vectorized NumPy, including larger cases where NumPy remains faster. This does
+not replace the scalar API or establish GPU performance.

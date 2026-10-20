@@ -143,8 +143,8 @@ def profile(library=None, blas='libblas.so.3', warmup=5, iterations=30, rounds=3
             large=True, numpy_blas=None, numpy_abi='numpy-ilp64'):
     if warmup < 0 or iterations <= 0 or rounds <= 0:
         raise ValueError('invalid warmup/iterations/rounds')
-    if any(os.environ.get(k) != '1' for k in THREAD_KEYS[:3]):
-        raise ValueError('set OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 before launch')
+    if any(os.environ.get(k) != '1' for k in THREAD_KEYS):
+        raise ValueError('set ' + ' '.join(key + '=1' for key in THREAD_KEYS) + ' before launch')
     numpy_path = Path(numpy_blas or numpy_openblas()).resolve()
     # An explicit override must still be a dependency of NumPy's loaded module.
     dependencies = subprocess.check_output(

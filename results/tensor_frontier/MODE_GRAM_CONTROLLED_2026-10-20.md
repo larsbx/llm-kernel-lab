@@ -176,11 +176,13 @@ python tools/build_mode_gram.py \
   --output .build/tensor_frontier/libmode_gram_matched.so
 
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  BLIS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 \
   taskset -c 0 python -m benchmarks.tensor_frontier.profile_mode_gram \
   --library .build/tensor_frontier/libmode_gram_system.so \
   --output results/tensor_frontier/system-replay.json
 
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  BLIS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 \
   taskset -c 0 python -m benchmarks.tensor_frontier.profile_mode_gram \
   --library .build/tensor_frontier/libmode_gram_matched.so \
   --blas "$PWD/.build/tensor_frontier/libnumpy_cblas_lp64.so" \
@@ -207,3 +209,9 @@ LP64 OpenBLAS deployment (avoiding private NumPy symbols), then assess native
 scan/packing optimization or a measured primitive dispatch policy. The current
 evidence supports backend selection first; it does not support weakening guards,
 a universal SYRK replacement, or a GPU claim.
+
+Thread-control follow-up: the profiler now also requires `BLIS_NUM_THREADS=1`
+and `VECLIB_MAXIMUM_THREADS=1` before loading any provider. The archived runs
+retain their original environment metadata; they used the recorded system BLAS
+and OpenBLAS, not BLIS. This repair prevents uncontrolled alternative-provider
+runs and does not rewrite the historical measurements.

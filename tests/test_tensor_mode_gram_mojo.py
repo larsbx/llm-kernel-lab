@@ -146,7 +146,7 @@ def test_shared_native_profile_helpers(kernel):
 
 def test_native_profile_end_to_end(kernel, monkeypatch):
     from benchmarks.tensor_frontier import profile_mode_gram as profile
-    for key in profile.THREAD_KEYS[:3]:
+    for key in profile.THREAD_KEYS:
         monkeypatch.setenv(key, '1')
     try:
         profile.numpy_openblas()

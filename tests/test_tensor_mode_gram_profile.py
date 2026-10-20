@@ -60,7 +60,7 @@ def test_thread_environment_required(monkeypatch):
 
 
 def test_smoke_report_and_hash_guard(monkeypatch, tmp_path):
-    for key in p.THREAD_KEYS[:3]:
+    for key in p.THREAD_KEYS:
         monkeypatch.setenv(key, '1')
     try:
         p.numpy_openblas()
@@ -81,3 +81,17 @@ def test_smoke_report_and_hash_guard(monkeypatch, tmp_path):
     binary.with_suffix('.build.json').write_text(json.dumps({'binary_sha256': 'wrong'}))
     with pytest.raises(ValueError, match='hash mismatch'):
         p.profile(library=binary, large=False)
+
+
+@pytest.mark.parametrize('key', ['BLIS_NUM_THREADS', 'VECLIB_MAXIMUM_THREADS'])
+@pytest.mark.parametrize('value', [None, '2', '0'])
+def test_other_provider_thread_limits_required(monkeypatch, key, value):
+    for name in p.THREAD_KEYS:
+        monkeypatch.setenv(name, '1')
+    if value is None:
+        monkeypatch.delenv(key)
+    else:
+        monkeypatch.setenv(key, value)
+    monkeypatch.setattr(p, 'numpy_openblas', lambda: pytest.fail('loaded provider before guard'))
+    with pytest.raises(ValueError, match=key):
+        p.profile()

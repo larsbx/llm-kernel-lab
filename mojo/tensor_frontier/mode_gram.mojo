@@ -6,6 +6,21 @@ from std.math import isfinite
 
 comptime F64Ptr = Pointer[Float64, MutUntrackedOrigin]
 
+
+def _all_finite(data: F64Ptr, count: Int) -> Bool:
+    for i in range(count):
+        if not isfinite(data[unsafe_offset=i]):
+            return False
+    return True
+
+
+def _pack_mode1(tensor: F64Ptr, packed: F64Ptr, d0: Int, d1: Int, d2: Int):
+    var width = d0 * d2
+    for j in range(d1):
+        for i in range(d0):
+            for k in range(d2):
+                packed[unsafe_offset=j * width + i * d2 + k] = tensor[unsafe_offset=(i * d1 + j) * d2 + k]
+
 @export
 def mode_gram_f64(
     tensor_address: Int, d0: Int, d1: Int, d2: Int, mode: Int,
@@ -38,9 +53,8 @@ def mode_gram_f64(
         return 3
     var tensor = F64Ptr(unsafe_from_address=tensor_address)
     var output = F64Ptr(unsafe_from_address=output_address)
-    for i in range(count):
-        if not isfinite(tensor[unsafe_offset=i]):
-            return 4
+    if not _all_finite(tensor, count):
+        return 4
 
     var width = count // rows
     var matrix = tensor
@@ -51,10 +65,7 @@ def mode_gram_f64(
     # mode 2: row k, column i*d1+j; use BLAS transpose, no copy.
     if mode == 1:
         packed = alloc[Float64](count)
-        for j in range(d1):
-            for i in range(d0):
-                for k in range(d2):
-                    packed[unsafe_offset=j * width + i * d2 + k] = tensor[unsafe_offset=(i * d1 + j) * d2 + k]
+        _pack_mode1(tensor, packed, d0, d1, d2)
         matrix = packed
 
     var trans_a = Int32(111)  # CblasNoTrans
@@ -72,7 +83,44 @@ def mode_gram_f64(
     )
     if mode == 1:
         packed.unsafe_free()
-    for i in range(rows * rows):
-        if not isfinite(output[unsafe_offset=i]):
-            return 5
+    if not _all_finite(output, rows * rows):
+        return 5
+    return 0
+
+
+# Benchmark-only raw pointer ABI. Callers own valid aligned allocations and
+# lengths, as for the public raw ABI. These probes never produce Gram evidence.
+# Shared helpers preserve the production finite-scan and packing algorithms.
+@export
+def mode_gram_probe_noop(
+    tensor_address: Int, d0: Int, d1: Int, d2: Int, mode: Int,
+    input_len: Int, output_address: Int, output_len: Int,
+) abi("C") -> Int32:
+    return 0
+
+
+@export
+def mode_gram_probe_scan(address: Int, count: Int) abi("C") -> Int32:
+    if address == 0 or count <= 0 or count > 2147483647:
+        return 3
+    if not _all_finite(F64Ptr(unsafe_from_address=address), count):
+        return 4
+    return 0
+
+
+@export
+def mode_gram_probe_pack(
+    tensor_address: Int, d0: Int, d1: Int, d2: Int, packed_address: Int,
+) abi("C") -> Int32:
+    comptime LIMIT = 2147483647
+    if d0 <= 0 or d1 <= 0 or d2 <= 0:
+        return 2
+    if d0 > LIMIT or d1 > LIMIT or d2 > LIMIT:
+        return 2
+    if d0 > LIMIT // d1 or d0 * d1 > LIMIT // d2:
+        return 2
+    if tensor_address == 0 or packed_address == 0:
+        return 3
+    _pack_mode1(F64Ptr(unsafe_from_address=tensor_address),
+                F64Ptr(unsafe_from_address=packed_address), d0, d1, d2)
     return 0

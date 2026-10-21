@@ -132,7 +132,10 @@ definitions use algebraic invariants rather than angles, trigonometric
 functions, logarithms, exponentials, or complex-number syntax.  When a source
 paper uses an analytic quantity that has no equivalent algebraic replacement,
 the lab records it as an analytic diagnostic rather than silently changing the
-claim.
+claim. Exact algebraization records also carry explicit loss profiles so
+preserving a target predicate is never confused with preserving branch,
+topological, differential, measure, asymptotic, probabilistic, or flow
+structure.
 
 The first executable reference layer is `tensor_lab/algebraic.py`, using exact
 `Fraction` arithmetic.  The first research targets are moment-polytope/tensor
@@ -141,6 +144,7 @@ secant/border-rank reconnaissance, and PEPS-style contraction kernels.
 
 ```sh
 pixi run tensor-audit
+pixi run tensor-losses
 pixi run tensor-test
 pixi run tensor-plan
 ```

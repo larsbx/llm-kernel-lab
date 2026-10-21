@@ -1,0 +1,141 @@
+version = 2
+template = "estate-repository-v2"
+
+[repo]
+id = "llm-kernel-lab"
+slug = "larsbx/llm-kernel-lab"
+class = "research"
+layer = 3
+band = "EXPLORE"
+stage = "candidate"
+inv = []
+default_branch = "main"
+
+[origin]
+decided_by = "proposed"
+chats = []
+artifacts = []
+
+[[dep]]
+id = "estate-governance"
+rev = "5ea47dec8086eab6a1dad6fd239688d20ea89891"
+pin = "sha256:412a64dea58d709aae21e5a0315b8e7e96488c310a9d999267927ba3d8146a30"
+
+[exports]
+names = []
+
+[layout]
+status = "transitional"
+
+[principles]
+ordering = ["authority", "domain", "language"]
+empty_silos = "forbidden"
+cross_language_disagreement = "fail_closed"
+generated_surfaces = "derived_only"
+vendor_code = "non_local"
+experimental_code = "non_authoritative"
+
+[[plane]]
+id = "policy"
+target = "policy"
+authority = "governance"
+required = true
+current = ["ESTATE.toml", "research/tensor_frontier/estate-adoption.toml"]
+
+[[plane]]
+id = "kernel"
+target = "kernel"
+authority = "canonical_executable"
+required = true
+current = ["lean"]
+
+[[plane]]
+id = "reference"
+target = "reference"
+authority = "non_authoritative_reference"
+required = true
+current = ["tensor_lab"]
+
+[[plane]]
+id = "generation"
+target = "generation"
+authority = "non_authoritative_oracle"
+required = true
+current = ["prover_loop"]
+
+[[plane]]
+id = "oracles"
+target = "oracles"
+authority = "non_authoritative_oracle"
+required = true
+current = ["mojo"]
+
+[[plane]]
+id = "experiments"
+target = "experiments"
+authority = "non_authoritative_experiment"
+required = true
+current = ["benchmarks", "experiments"]
+current_globs = ["research/tensor_frontier/*.md"]
+
+[[plane]]
+id = "conformance"
+target = "conformance"
+authority = "evidence"
+required = true
+current = ["tests"]
+
+[[plane]]
+id = "evidence"
+target = "evidence"
+authority = "evidence"
+required = true
+current = ["results", "problems"]
+
+[[plane]]
+id = "tooling"
+target = "tools"
+authority = "repository_tooling"
+required = true
+current = ["tools", "gpu", "flake.nix"]
+
+[[plane]]
+id = "docs"
+target = "docs"
+authority = "exposition"
+required = true
+current = ["README.md", "ARCHITECTURE.md", "docs"]
+
+[[language]]
+name = "Lean"
+authority = "canonical"
+roles = ["kernel", "proof_acceptance"]
+acceptance_authority = true
+
+[[language]]
+name = "Python"
+authority = "supporting"
+roles = ["orchestration", "reference", "audit", "training"]
+acceptance_authority = false
+
+[[language]]
+name = "Mojo"
+authority = "supporting"
+roles = ["oracle", "experiment", "benchmark"]
+acceptance_authority = false
+
+[[language]]
+name = "Bash"
+authority = "supporting"
+roles = ["gpu_orchestration"]
+acceptance_authority = false
+
+[migration]
+mode = "boundary_first"
+mass_move = false
+next = [
+  "separate candidate generation from the Lean verification adapter",
+  "move exact tensor reference code under the reference plane",
+  "move tensor discovery kernels under explicit oracle or experiment namespaces",
+  "separate immutable benchmark inputs from generated evidence",
+]

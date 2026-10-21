@@ -64,3 +64,9 @@ throughput and differential agreement with the declared reference predicate.
 Mojo layout handling and the existing LP64 CBLAS GEMM primitive. See
 [MODE_GRAM_IMPLEMENTATION.md](MODE_GRAM_IMPLEMENTATION.md) for the checked API,
 size guards, mandatory cross-language test lane and reproducible benchmark.
+
+## Bounded CUDA prototype
+
+See [MODE_GRAM_CUDA.md](MODE_GRAM_CUDA.md) for the all-mode FP64 prototype,
+independent cuBLAS comparison, offline compile/host checks and required hardware
+acceptance lane. GPU execution and performance remain unmeasured.

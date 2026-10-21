@@ -228,6 +228,15 @@ M1 — kernel baseline:
 - CPU reference and Mojo implementations;
 - differential tests and benchmark harness.
 
+Mode-Gram CUDA follow-up (2026-10-21): a bounded all-mode FP64 prototype,
+independent cuBLAS strided-batch lane, timing/provenance harness and required
+hardware tests are prepared on top of the controlled CPU stack. Offline target
+compilation and host checks do not close device replication. See
+[the CUDA contract](../../mojo/tensor_frontier/MODE_GRAM_CUDA.md); numerical GPU
+acceptance, external-stream interoperability, device capability recording and
+resident/end-to-end performance measurements remain open until a compatible
+NVIDIA host runs the required lane. The exact oracle retains its authority.
+
 M2 — first scientific probe:
 - TF-1 moment-polytope scaling census;
 - candidate reconstruction pipeline.

@@ -48,5 +48,11 @@ The track is governed by:
 - `estate-adoption.toml` — machine-readable repository routing and authority
   declarations.
 
-The first executable oracle lives in `../../tensor_lab/algebraic.py`.  It is
-small on purpose: exact rational identities first, accelerator kernels second.
+The executable exact-reference layer lives in `../../tensor_lab/`:
+`algebraic.py` provides rational algebraic predicates and `tensors.py`
+provides the first exact tensor kernel oracle, `mode_gram`. These references
+stay small on purpose: exact predicates first, accelerator kernels second.
+
+Tensor-frontier Markdown is checked by `../../tools/check_markdown_math.py`;
+`pixi run tensor-doc-audit` rejects control-character corruption, lone
+single-dollar display fences, and inline dollar delimiters inside display math.

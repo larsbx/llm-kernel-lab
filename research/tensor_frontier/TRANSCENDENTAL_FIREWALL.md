@@ -100,6 +100,54 @@ radical-free unless an explicit algebraic extension is part of the problem.
 
 A = exact algebraization. S = non-equivalent surrogate. D = diagnostic only.
 
+
+## Exact predicate versus surrounding structure
+
+Class **A** means that the declared *target predicate* is preserved by the
+algebraic formulation.  It does **not** mean that every structure carried by
+the source presentation survives.
+
+For example, replacing an angle by Gram data can preserve the comparison or
+incidence predicate while discarding a chosen branch or winding number.
+Likewise, a rotor pair can preserve the final orientation-preserving operator
+while not recording how many times an analytic angle parameter wound around its
+covering space.
+
+Every registered algebraization therefore has two independent declarations:
+
+1. **target predicate status** — whether the mathematical predicate under study
+   is preserved, changed, or deliberately not replaced;
+2. **loss profile** — what surrounding analytic/geometric structure is
+   preserved, lost, conditional on extra data, or not applicable.
+
+The canonical loss dimensions are:
+
+- `branch_winding` — branch choice, covering data, winding count;
+- `orientation` — sign/orientation data not determined by an invariant;
+- `topology` — connectedness, homotopy, covering-space information;
+- `smoothness` — differential, gradient, Hessian, curvature, smooth-flow
+  structure;
+- `measure` — integration or natural measure structure;
+- `asymptotics` — exponential rates, large deviations, free-energy or
+  logarithmic asymptotics;
+- `probability_semantics` — distribution family, tails, concentration, exact
+  likelihood semantics;
+- `generator_flow` — infinitesimal generator or time-parameterized flow
+  semantics.
+
+Allowed values are `preserved`, `lost`, `conditional`, and
+`not_applicable`.
+
+The machine-readable registry is
+`research/tensor_frontier/algebraization-contracts.toml`.  CI rejects a
+record that omits a dimension, labels an A-record whose target predicate is not
+preserved, labels an S-record whose target predicate is not changed, or labels
+a D-record as though a replacement had been made.
+
+The governing principle is:
+
+> Algebraize the invariant, not automatically the entire analytic environment.
+
 ## Non-equivalence rule
 
 The firewall is not permission to rename a different quantity.

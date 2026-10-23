@@ -1,0 +1,96 @@
+schema = 1
+
+dimensions = [
+  "branch_winding",
+  "orientation",
+  "topology",
+  "smoothness",
+  "measure",
+  "asymptotics",
+  "probability_semantics",
+  "generator_flow",
+]
+
+# Class A preserves the declared target predicate, not necessarily every
+# surrounding structure carried by the source presentation.
+
+[[algebraization]]
+id = "angle-to-gram-spread"
+class = "A"
+source_vocabulary = "angle / inverse-trig comparison"
+replacement = "Gram data and projective spread"
+scope = "Predicates depending only on bilinear/quadratic invariants or spread."
+target_predicate_status = "preserved"
+loss = { branch_winding = "lost", orientation = "conditional", topology = "conditional", smoothness = "conditional", measure = "not_applicable", asymptotics = "not_applicable", probability_semantics = "not_applicable", generator_flow = "not_applicable" }
+
+[[algebraization]]
+id = "trig-pair-to-rotor"
+class = "A"
+source_vocabulary = "sin/cos pair representing a final planar rotation"
+replacement = "conic rotor pair (c,s) with c^2+s^2=1"
+scope = "Final operator, composition, and polynomial norm-one predicates."
+target_predicate_status = "preserved"
+loss = { branch_winding = "lost", orientation = "preserved", topology = "conditional", smoothness = "conditional", measure = "not_applicable", asymptotics = "not_applicable", probability_semantics = "not_applicable", generator_flow = "conditional" }
+
+[[algebraization]]
+id = "tangent-to-projective-ratio"
+class = "A"
+source_vocabulary = "tangent ratio"
+replacement = "projective pair [s:c]"
+scope = "Ratio/incidence predicates including the c=0 projective point."
+target_predicate_status = "preserved"
+loss = { branch_winding = "lost", orientation = "conditional", topology = "conditional", smoothness = "conditional", measure = "not_applicable", asymptotics = "not_applicable", probability_semantics = "not_applicable", generator_flow = "not_applicable" }
+
+[[algebraization]]
+id = "phase-to-quadratic-algebra-pair"
+class = "A"
+source_vocabulary = "unit complex phase as exp(i*theta)"
+replacement = "norm-one pair in a quadratic algebra / rotor matrix"
+scope = "Multiplication, norm-one, and final phase-operator predicates."
+target_predicate_status = "preserved"
+loss = { branch_winding = "lost", orientation = "preserved", topology = "conditional", smoothness = "conditional", measure = "conditional", asymptotics = "not_applicable", probability_semantics = "not_applicable", generator_flow = "conditional" }
+
+[[algebraization]]
+id = "norm-to-quadrance"
+class = "A"
+source_vocabulary = "square-root norm"
+replacement = "quadrance or squared residual"
+scope = "Equality, ordering, zero-test, and residual predicates invariant under squaring on the declared nonnegative domain."
+target_predicate_status = "preserved"
+loss = { branch_winding = "not_applicable", orientation = "not_applicable", topology = "not_applicable", smoothness = "conditional", measure = "not_applicable", asymptotics = "conditional", probability_semantics = "not_applicable", generator_flow = "not_applicable" }
+
+[[algebraization]]
+id = "softmax-probabilities-from-positive-weights"
+class = "A"
+source_vocabulary = "softmax probabilities"
+replacement = "direct positive multiplicative weights followed by rational normalization"
+scope = "The normalized probability vector itself; logit differences are outside scope."
+target_predicate_status = "preserved"
+loss = { branch_winding = "not_applicable", orientation = "not_applicable", topology = "not_applicable", smoothness = "conditional", measure = "not_applicable", asymptotics = "conditional", probability_semantics = "preserved", generator_flow = "not_applicable" }
+
+[[algebraization]]
+id = "shannon-entropy-to-power-sum"
+class = "S"
+source_vocabulary = "Shannon entropy"
+replacement = "power sums / collision statistics"
+scope = "Exploratory algebraic statistics only; not an entropy identity."
+target_predicate_status = "changed"
+loss = { branch_winding = "not_applicable", orientation = "not_applicable", topology = "not_applicable", smoothness = "not_applicable", measure = "conditional", asymptotics = "lost", probability_semantics = "lost", generator_flow = "not_applicable" }
+
+[[algebraization]]
+id = "matrix-exponential-to-cayley"
+class = "S"
+source_vocabulary = "general matrix exponential / one-parameter flow"
+replacement = "Cayley or rational group chart"
+scope = "Group-valued surrogate where chart semantics are useful; not the original flow."
+target_predicate_status = "changed"
+loss = { branch_winding = "conditional", orientation = "conditional", topology = "conditional", smoothness = "conditional", measure = "conditional", asymptotics = "lost", probability_semantics = "not_applicable", generator_flow = "lost" }
+
+[[algebraization]]
+id = "analytic-free-energy-diagnostic"
+class = "D"
+source_vocabulary = "analytic asymptotic free energy"
+replacement = "retained analytic diagnostic"
+scope = "No algebraic replacement is asserted."
+target_predicate_status = "not_replaced"
+loss = { branch_winding = "not_applicable", orientation = "not_applicable", topology = "not_applicable", smoothness = "preserved", measure = "preserved", asymptotics = "preserved", probability_semantics = "conditional", generator_flow = "conditional" }

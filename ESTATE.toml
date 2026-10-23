@@ -1,17 +1,31 @@
-version = 1
-template = "estate-repository-v1"
+version = 2
+template = "estate-repository-v2"
 
-[repository]
-id = "larsbx/llm-kernel-lab"
-kind = "research"
-lifecycle = "active"
+[repo]
+id = "llm-kernel-lab"
+slug = "larsbx/llm-kernel-lab"
+class = "research"
+layer = 3
+band = "EXPLORE"
+stage = "candidate"
+inv = []
 default_branch = "main"
-layout_status = "transitional"
 
-[estate_tooling]
-repository = "larsbx/finite-math-kernels"
-path = "audit/estate_repository/v1"
-revision = "7543130ccfa05a88b5ddbacb46d4371ac99c21f9"
+[origin]
+decided_by = "proposed"
+chats = []
+artifacts = []
+
+[[dep]]
+id = "estate-governance"
+rev = "5ea47dec8086eab6a1dad6fd239688d20ea89891"
+pin = "sha256:412a64dea58d709aae21e5a0315b8e7e96488c310a9d999267927ba3d8146a30"
+
+[exports]
+names = []
+
+[layout]
+status = "transitional"
 
 [principles]
 ordering = ["authority", "domain", "language"]
@@ -26,7 +40,7 @@ id = "policy"
 target = "policy"
 authority = "governance"
 required = true
-current = ["research/tensor_frontier/estate-adoption.toml"]
+current = ["ESTATE.toml", "research/tensor_frontier/estate-adoption.toml"]
 
 [[plane]]
 id = "kernel"
@@ -90,7 +104,7 @@ id = "docs"
 target = "docs"
 authority = "exposition"
 required = true
-current = ["README.md", "docs"]
+current = ["README.md", "ARCHITECTURE.md", "docs"]
 
 [[language]]
 name = "Lean"
@@ -124,5 +138,4 @@ next = [
   "move exact tensor reference code under the reference plane",
   "move tensor discovery kernels under explicit oracle or experiment namespaces",
   "separate immutable benchmark inputs from generated evidence",
-  "consume the shared estate audit by immutable revision",
 ]

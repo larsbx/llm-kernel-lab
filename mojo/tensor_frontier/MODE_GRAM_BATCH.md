@@ -97,6 +97,10 @@ wrapper setup and checks; it is not an isolated allocation timer.
 
 ## GPU follow-up boundary
 
+The follow-up now has an [offline-compiled CUDA prototype and comparison harness](MODE_GRAM_CUDA.md).
+Host checks do not discharge GPU numerical or performance acceptance; the
+original CPU observations and limits below are unchanged.
+
 No GPU is exposed in the execution environment used for this CPU report.
 No GPU kernel, CUDA migration result or GPU speedup is claimed. A GPU follow-up
 needs an executable, independently checked experiment on available hardware:

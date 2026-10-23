@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "status": "probe_only",
+  "created_at_utc": "2026-10-21T12:57:39.417135+00:00",
+  "environment": {
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "device_nodes": [],
+    "nvidia_smi": {
+      "error": "[Errno 2] No such file or directory: 'nvidia-smi'"
+    },
+    "nvcc": {
+      "error": "[Errno 2] No such file or directory: 'nvcc'"
+    },
+    "mojo": {
+      "exit_code": 0,
+      "stdout": "Mojo 1.1.0 (8189361e)\n",
+      "stderr": ""
+    },
+    "gpu_environment": {
+      "CUDA_VISIBLE_DEVICES": null,
+      "CUDA_DEVICE_ORDER": null,
+      "CUDA_MODULE_LOADING": null,
+      "CUBLAS_WORKSPACE_CONFIG": null,
+      "CUBLAS_EMULATION_STRATEGY": null,
+      "NVIDIA_TF32_OVERRIDE": null
+    },
+    "gpu_available": false,
+    "measurements": [],
+    "cupy": "13.6.0",
+    "unavailability": "CUDARuntimeError: cudaErrorInsufficientDriver: CUDA driver version is insufficient for CUDA runtime version"
+  },
+  "sources_sha256": {
+    "tensor_lab/cuda_mode_gram.py": "ee064e04d27a2cc50693c2b8a7009571f65424aa0eaab27d336d036310312c26",
+    "tensor_lab/tensors.py": "4ce140f75ded0c98aac43f55dd844efe558adf526f908b867a029dba4cf5151c",
+    "tensor_lab/numpy_baseline.py": "b40f61cddb14c2284ff74bfb81dc90a32f40675c2bf58bcf360cc5dbb3883568",
+    "tensor_lab/mojo_mode_gram_batch.py": "da820b271258d2ec11b731f03f95ba1dc0165e50ac9cedf59981afacbcb917c7",
+    "tensor_lab/mojo_mode_gram.py": "79e2c40f81362ccc2a1e0d595fc2d2925e14c21604c3133d915834277a88da11",
+    "benchmarks/tensor_frontier/benchmark_mode_gram_cuda.py": "f70b9de9f2c9585c63258fcbcc7063104432a11fe673daf4d320e0306ad4c2b4",
+    "benchmarks/tensor_frontier/benchmark_mode_gram.py": "0ef434ec999f252abe524c8d8bca5df10b7d46558ae9632a0ae3629f7e311275",
+    "benchmarks/tensor_frontier/benchmark_mode_gram_batch.py": "705d94b173db9f3a59b1a372fe3e3a772c34dbb8317f585d5e6b3e9062378136"
+  },
+  "corpus_sha256": "abf393f8255e6d12ed7dafd4f710992fd028c68fc62312bb140aa56440791ed6",
+  "revision": "e9b5af2c6ef9a9ed764a07a90536e4ab0fa39d0e",
+  "working_tree_dirty": false,
+  "records": []
+}

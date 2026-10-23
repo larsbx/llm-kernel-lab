@@ -1,0 +1,25 @@
+{
+  "command": [
+    "../toolchain/bin/mojo",
+    "build",
+    "/workspace/scratch/667c541d94b0/llm-kernel-lab/mojo/tensor_frontier/mode_gram_cuda.mojo",
+    "--emit",
+    "shared-lib",
+    "--target-accelerator",
+    "nvidia:sm_80",
+    "-O3",
+    "-o",
+    "/workspace/scratch/667c541d94b0/llm-kernel-lab/.build/tensor_frontier/libmode_gram_cuda.so"
+  ],
+  "target": "nvidia:sm_80",
+  "compiler_version": "Mojo 1.1.0 (8189361e)",
+  "binary_sha256": "fad603fa28ad8456a6ecbd9dde57e2bacfa32ac98be529505e8d85d821b6db66",
+  "sources_sha256": {
+    "mojo/tensor_frontier/mode_gram_cuda.mojo": "48c5aa54523fb89346e21adf059cce0990f12e52a2873f1082c37365bef6cf34",
+    "tools/build_mode_gram_cuda.py": "550210ebe29db7218d8dedccbd69267984d46b22f9b9f78503e8415f794cf0c2"
+  },
+  "implementation_revision": "e9b5af2c6ef9a9ed764a07a90536e4ab0fa39d0e",
+  "working_tree_dirty": false,
+  "dynamic_dependencies": "\tlinux-vdso.so.1 (0x00007f09c69fd000)\n\tlibKGENCompilerRTShared.so => /workspace/scratch/667c541d94b0/toolchain/modular/lib/libKGENCompilerRTShared.so (0x00007f09c68a6000)\n\tlibAsyncRTMojoBindings.so => /workspace/scratch/667c541d94b0/toolchain/modular/lib/libAsyncRTMojoBindings.so (0x00007f09c6767000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f09c654c000)\n\tlibm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007f09c6461000)\n\tlibstdc++.so.6 => /lib/x86_64-linux-gnu/libstdc++.so.6 (0x00007f09c61e3000)\n\tlibMSupportGlobals.so => /workspace/scratch/667c541d94b0/toolchain/modular/lib/libMSupportGlobals.so (0x00007f09c61d4000)\n\tlibAsyncRTRuntimeGlobals.so => /workspace/scratch/667c541d94b0/toolchain/modular/lib/libAsyncRTRuntimeGlobals.so (0x00007f09c56c7000)\n\tlibgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x00007f09c5699000)\n\t/lib64/ld-linux-x86-64.so.2 (0x00007f09c69ff000)\n",
+  "validation": "offline target compilation only; no GPU execution"
+}

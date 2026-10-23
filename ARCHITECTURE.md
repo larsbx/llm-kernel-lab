@@ -1,10 +1,10 @@
 # Architecture
 
-This repository follows **Estate Repository Template v1**.
+This repository follows **Estate Repository Template v2**, whose canonical
+source is `larsbx/estate-governance`.
 
-The machine-readable authority map is [`estate.toml`](estate.toml). The reusable
-contract is [`docs/architecture/estate-repository-template-v1.md`](docs/architecture/estate-repository-template-v1.md),
-and the repository-specific migration map is
+The machine-readable authority map is [`ESTATE.toml`](ESTATE.toml). The
+repository-specific migration map remains
 [`docs/architecture/llm-kernel-lab-application.md`](docs/architecture/llm-kernel-lab-application.md).
 
 ## Authority summary
@@ -27,10 +27,18 @@ The existing `research/tensor_frontier/estate-adoption.toml` remains the
 cross-repository routing policy for tensor-frontier work. It does not delegate
 domain-claim acceptance.
 
+## Governance pin
+
+`ESTATE.toml` pins the canonical v2 audit by governance commit and SHA-256.
+CI downloads that exact audit from `larsbx/estate-governance`, verifies the
+digest, and runs it against this checkout. No repository-private copy of the
+generic estate audit is authoritative.
+
 ## Transitional layout
 
-The current tree is intentionally retained. `estate.toml` maps existing paths to
-their target authority planes so architecture can be audited before files are moved.
+The repository remains `layout.status = "transitional"`. Existing paths map
+to v2 authority planes through `ESTATE.toml`; this migration does not mass-move
+source.
 
-No file move in this adoption changes proof status, model authority, benchmark
-meaning, or the semantics of the Lean verifier.
+No path change in the estate migration changes proof status, model authority,
+benchmark meaning, or the semantics of the Lean verifier.

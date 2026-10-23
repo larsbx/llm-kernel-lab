@@ -180,6 +180,14 @@ Each occurrence receives one of three statuses:
 
 A surrogate may never inherit the theorem statement of the source quantity.
 
+
+The A/S/D class is not a completeness claim about the source presentation.
+Each registered transformation must also name an algebraization contract and
+its loss profile.  In particular an A-record can preserve the target predicate
+while explicitly losing branch/winding, topology, differential structure,
+measure, asymptotics, probability-family semantics, or generator/flow
+information.
+
 ## 6. LLM representation experiment
 
 For selected problems generate paired prompts:
@@ -209,6 +217,9 @@ seed / generator
 shape and dtype
 algebraic encoding
 transcendental classification
+algebraization_contract_id
+target_predicate_status
+loss_profile
 raw observation
 reconstruction status
 checker/version

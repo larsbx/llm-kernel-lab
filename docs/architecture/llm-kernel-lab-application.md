@@ -1,17 +1,16 @@
-# Estate template application: llm-kernel-lab
+# Estate v2 application: llm-kernel-lab
 
-Status: second adopter of Estate Repository Template v1.
+Status: transitional v2 consumer.
 
-## Why this repository is the second adopter
+## Why this repository matters
 
-The first adopter, `finite-mandelbrot-research`, has a Mojo-centered executable
-acceptance boundary. This repository exercises a materially different authority
-shape: Lean is canonical for proof acceptance, while Python, MAX/model inference,
-and Mojo occupy supporting roles.
+`llm-kernel-lab` exercises a different authority shape from the Mojo-centered
+finite-mathematics repositories: Lean is canonical for proof acceptance, while
+Python, MAX/model inference, Mojo, benchmarks, and tensor experiments occupy
+supporting or non-authoritative roles.
 
-If the same manifest and audit can describe both repositories without changing
-their authority, the template is demonstrating cross-domain and cross-language
-generality rather than merely encoding one repository's layout.
+The v2 migration preserves that distinction and replaces the superseded local v1
+template/audit copies with the canonical `larsbx/estate-governance` contract.
 
 ## Authority boundary
 
@@ -19,19 +18,19 @@ The proof path is:
 
 ```text
 problem statement
-    │
-    ▼
+    |
+    v
 candidate generator / model
-    │    non-authoritative
-    ▼
+    |    non-authoritative
+    v
 prover_loop orchestration
-    │
-    ▼
+    |
+    v
 pinned Lean + Mathlib verifier
-    │
-    ├── rejects ──▶ evidence only
-    │
-    └── accepts ──▶ verified proof record
+    |
+    +-- rejects --> evidence only
+    |
+    +-- accepts --> verified proof record
 ```
 
 Only the final Lean boundary decides whether a candidate is accepted as a proof.
@@ -42,18 +41,18 @@ computation cannot substitute for that boundary.
 
 | Authority plane | Current paths | Target | Meaning |
 | --- | --- | --- | --- |
-| policy | `research/tensor_frontier/estate-adoption.toml` | `policy/` | authority routing and governance |
+| policy | `ESTATE.toml`, `research/tensor_frontier/estate-adoption.toml` | `policy/` | repository and tensor-routing governance |
 | kernel | `lean/` | `kernel/` | canonical proof acceptance |
 | reference | `tensor_lab/` | `reference/` | exact executable reference semantics |
 | generation | `prover_loop/` | `generation/` | candidate generation and verification orchestration |
 | oracles | `mojo/` | `oracles/` | non-authoritative high-performance research computation |
-| experiments | `research/tensor_frontier/*.md`, `benchmarks/`, `experiments/` | `experiments/` | research programmes, benchmark experiments, and the micro LM / classifier pipeline (`experiments/micro_train/`) |
+| experiments | `research/tensor_frontier/*.md`, `benchmarks/`, `experiments/` | `experiments/` | research programmes and benchmark experiments |
 | conformance | `tests/` | `conformance/` | regression and boundary tests |
 | evidence | `results/`, `problems/` | `evidence/` | benchmark inputs and generated evidence |
-| tooling | `tools/`, `gpu/`, `flake.nix` | `tools/` | audits, preparation, training, run orchestration, and container provisioning |
-| docs | `README.md` | `docs/` | exposition |
+| tooling | `tools/`, `gpu/`, `flake.nix` | `tools/` | preparation, training, run orchestration, and provisioning |
+| docs | `README.md`, `ARCHITECTURE.md`, `docs/` | `docs/` | exposition |
 
-The map is transitional. No mass move is part of the adoption PR.
+The map is transitional. No mass move is part of the v2 adoption.
 
 ## Language roles
 
@@ -93,7 +92,7 @@ It cannot promote a theorem candidate.
 
 ## Relationship to tensor-frontier routing
 
-`research/tensor_frontier/estate-adoption.toml` already distinguishes:
+`research/tensor_frontier/estate-adoption.toml` continues to distinguish:
 
 - discovery ownership;
 - reusable exact-kernel ownership;
@@ -102,25 +101,31 @@ It cannot promote a theorem candidate.
 - domain claim ownership; and
 - proof authority.
 
-That policy remains in force. Estate Template v1 lifts the same discipline to the
-whole repository instead of replacing the tensor-specific routing contract.
+That tensor-specific policy composes with `ESTATE.toml`; it does not replace the
+repository-wide authority manifest.
+
+## v1 retirement
+
+The v2 migration removes the repository-private generic v1 audit and contract.
+CI instead retrieves `kernel/audit_estate_layout.py` from the exact
+`estate-governance` revision declared in `ESTATE.toml` and verifies its
+SHA-256 before execution.
+
+The old lowercase `estate.toml` is superseded by `ESTATE.toml`.
 
 ## Migration sequence
 
-1. Declare and audit the existing authority boundaries.
-2. Keep the present tree stable while the second-adopter contract is reviewed.
-3. Extract the generic template and `audit_estate_layout.py` into shared estate
-   tooling now that two repositories exercise it.
-4. Separate candidate-generation code from the Lean verification adapter.
-5. Move exact tensor reference code into the reference plane.
-6. Move Mojo tensor discovery kernels into explicit oracle/experiment namespaces.
-7. Separate immutable benchmark inputs from generated evidence.
-8. Remove transitional path mappings only after consumers and CI use the canonical
-   layout.
+1. Adopt v2 authority and provenance fields without changing proof semantics.
+2. Keep the present tree stable while the v2 gate proves the mapping.
+3. Separate candidate generation from the Lean verification adapter.
+4. Move exact tensor reference code into the reference plane.
+5. Move Mojo tensor discovery kernels into explicit oracle/experiment namespaces.
+6. Separate immutable benchmark inputs from generated evidence.
+7. Remove transitional path mappings only after path migrations land atomically.
 
 ## Non-goals
 
-This adoption does not:
+This migration does not:
 
 - change which proofs Lean accepts;
 - make model output authoritative;
@@ -129,10 +134,3 @@ This adoption does not:
 - change the training/evaluation split;
 - change tensor-frontier cross-repository claim ownership; or
 - require a bulk directory reshuffle.
-
-## Second-adopter consequence
-
-With `finite-mandelbrot-research` and `llm-kernel-lab` both adopting v1, the
-template's stated promotion condition is met: the next architectural step is to
-extract the generic contract and audit into shared estate governance/tooling and
-have repositories pin that implementation rather than maintain private copies.

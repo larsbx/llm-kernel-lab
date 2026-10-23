@@ -4,16 +4,29 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Estate audit (pinned governance artifact)
+        shell: bash
+        run: |
+          set -euo pipefail
+          rev=$(python3 -c 'import tomllib; print(next(d["rev"] for d in tomllib.load(open("ESTATE.toml", "rb"))["dep"] if d["id"] == "estate-governance"))')
+          pin=$(python3 -c 'import tomllib; print(next(d["pin"] for d in tomllib.load(open("ESTATE.toml", "rb"))["dep"] if d["id"] == "estate-governance"))')
+          test "$rev" = "5ea47dec8086eab6a1dad6fd239688d20ea89891"
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            --output /tmp/estate-audit.py \
+            "https://raw.githubusercontent.com/larsbx/estate-governance/$rev/kernel/audit_estate_layout.py"
+          printf '%s  %s\n' "${pin#sha256:}" /tmp/estate-audit.py | sha256sum --check --strict -
+          python3 /tmp/estate-audit.py --root .
       - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e
         with:
           cache: true
-      - name: Audit estate authority layout
-        uses: larsbx/finite-math-kernels/audit/estate_repository/v1@7543130ccfa05a88b5ddbacb46d4371ac99c21f9
       - name: Install LP64 CPU BLAS
         run: sudo apt-get update && sudo apt-get install -y libblas3
       - name: Run repository test lane

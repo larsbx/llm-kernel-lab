@@ -116,3 +116,45 @@ def test_tolerance_is_entrywise_and_fail_closed():
             assert not mode_gram_allclose(reference, beyond)
     for invalid in [np.full((2, 2), np.nan), np.full((2, 2), np.inf), np.zeros((1, 2))]:
         assert not mode_gram_allclose(reference, invalid)
+
+
+def test_shared_native_profile_helpers(kernel):
+    import ctypes as ct
+    scan = kernel.library.mode_gram_probe_scan
+    scan.argtypes = [ct.c_ssize_t] * 2
+    scan.restype = ct.c_int32
+    pack = kernel.library.mode_gram_probe_pack
+    pack.argtypes = [ct.c_ssize_t] * 5
+    pack.restype = ct.c_int32
+    noop = kernel.library.mode_gram_probe_noop
+    noop.argtypes = [ct.c_ssize_t] * 8
+    noop.restype = ct.c_int32
+    assert noop(*([0] * 8)) == 0
+    assert scan(0, 1) == 3
+    assert scan(0, 2**40) == 3
+    for invalid in [float('nan'), float('inf'), float('-inf')]:
+        x = np.array([1., invalid, 2.])
+        assert scan(x.ctypes.data, x.size) == 4
+    x = (np.arange(60).reshape(3, 4, 5) - 23.) / 8
+    packed = np.empty((4, 15), dtype=np.float64)
+    assert scan(x.ctypes.data, x.size) == 0
+    assert pack(x.ctypes.data, *x.shape, packed.ctypes.data) == 0
+    assert np.array_equal(packed, np.moveaxis(x, 1, 0).reshape(4, 15))
+    assert pack(0, 3, 4, 5, 0) == 3
+    assert pack(0, 2**40, 4, 5, 0) == 2
+
+
+def test_native_profile_end_to_end(kernel, monkeypatch):
+    from benchmarks.tensor_frontier import profile_mode_gram as profile
+    for key in profile.THREAD_KEYS:
+        monkeypatch.setenv(key, '1')
+    try:
+        profile.numpy_openblas()
+    except RuntimeError as exc:
+        pytest.skip(str(exc))
+    monkeypatch.setattr(profile, 'cases', lambda: [{'id': 'native_probe', 'tensor': np.arange(24).reshape(2, 3, 4).tolist()}])
+    report = profile.profile(kernel.library_path, os.environ.get('MODE_GRAM_BLAS', 'libblas.so.3'),
+                             warmup=0, iterations=1, rounds=1, large=False)
+    assert report['native_status'] == 'measured'
+    assert len(report['records']) == 62
+    assert all(r['max_absolute_residual'] == 0 for r in report['records'] if r['check_scope'].startswith('full Gram'))

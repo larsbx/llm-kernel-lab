@@ -29,6 +29,11 @@ tt_local_update
 structured_reduce
 ```
 
+The first fully specified kernel contract is
+`MODE_GRAM_PROTOCOL.md`, which binds `mode_gram` to the exact rational
+reference predicate, deterministic comparison corpus, NumPy baseline, FP64
+agreement relation, and evidence ceiling before any Mojo implementation lands.
+
 ## Algebraic surface
 
 The kernel API should consume algebraic data directly where practical:
@@ -52,3 +57,10 @@ duplicate an already optimized primitive.
 
 Benchmarks live in `../../benchmarks/tensor_frontier/` and must report both
 throughput and differential agreement with the declared reference predicate.
+
+## Implemented CPU experiment
+
+`mode_gram.mojo` implements all three FP64 mode Gram products using explicit
+Mojo layout handling and the existing LP64 CBLAS GEMM primitive. See
+[MODE_GRAM_IMPLEMENTATION.md](MODE_GRAM_IMPLEMENTATION.md) for the checked API,
+size guards, mandatory cross-language test lane and reproducible benchmark.

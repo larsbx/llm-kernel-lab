@@ -100,3 +100,41 @@ BLAS packing and mode-1 packing are excluded. Effective throughput uses this
 same floor for both implementations. Compiler/build flags, source and binary
 hashes, NumPy/BLAS configuration, thread environment and corpus hash accompany
 the records. The saved run is documented under `results/tensor_frontier/`.
+
+## Controlled performance investigation
+
+[The controlled CPU report](../../results/tensor_frontier/MODE_GRAM_CONTROLLED_2026-10-20.md)
+separates provider, primitive, native scan/packing, wrapper, allocation and FFI
+probes, preserving full public-API measurements and exact checks. The opt-in
+`tensor-mode-gram-profile` task does not build implicitly; use the report's
+explicit build commands and supply `--library` for native measurements.
+
+The native library also exports benchmark-only `mode_gram_probe_noop` (the same
+eight integers as the public ABI), `mode_gram_probe_scan(address, count)` and
+`mode_gram_probe_pack(input_address, d0, d1, d2, packed_address)`. Scan and pack
+share production helpers. Raw pointer callers own valid aligned buffers of the
+declared size; pack requires disjoint input/output buffers containing
+`d0*d1*d2` elements. These probes are not public Gram APIs. The no-op never
+accesses memory; scan returns 3 for invalid/null descriptors and 4 for nonfinite
+values; pack returns 2 for invalid dimensions and 3 for null pointers.
+
+`tools/build_mode_gram_numpy_bridge.py` builds an explicit benchmark-only ABI
+adapter to NumPy's loaded ILP64 OpenBLAS. It widens LP64 dimensions before calling
+private ILP64 symbols, records library hashes, and adds one C call. Never link
+Mojo's LP64 call directly to ILP64 BLAS. The adapter is an experiment, not a
+portable deployment dependency or a change to the default system-BLAS build.
+
+Stage measurements overlap and have different cache/dispatch effects. They must
+not be added or subtracted as an exact decomposition. The saved investigation
+uses the available Mojo 1.1.0 release; locked-nightly validation is still pending.
+
+
+## Batched CPU follow-up
+
+The optional [batch/workspace API](MODE_GRAM_BATCH.md) amortizes the native
+boundary across homogeneous batches and reuses output/packing storage. Finite
+checks remain mandatory; mode-1 scan/packing fusion is explicit opt-in. The
+[batch report](../../results/tensor_frontier/MODE_GRAM_BATCH_2026-10-20.md) records
+matched-provider comparisons against both repeated scalar APIs and checked
+vectorized NumPy, including larger cases where NumPy remains faster. This does
+not replace the scalar API or establish GPU performance.

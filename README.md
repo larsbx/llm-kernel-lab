@@ -56,6 +56,22 @@ minutes on CPU. Both are one `--model` away on a GPU box.
 - Memory: MAX takes ~55% (weights + KV cache), Lean ~3 GB. At MAX's default
   90%, Lean thrashes: the serve task caps it with `--device-memory-utilization`.
 
+## Exact ML sampling
+
+The [ML efficiency track](docs/ml-efficiency.md) starts with one-token
+speculative correction over exact integer probabilities. Python supplies the
+reference sampler; Lean 4.15 proves its finite-mass law. Unequal totals and
+zero-probability tokens are supported. Model integration and serving speedup
+remain future acceptance work.
+
+```sh
+pixi run sampling-test
+pixi run sampling-acceptance  # clean committed checkout; pinned Lean on PATH
+```
+
+The dedicated `Exact speculative sampling` workflow requires fresh Lean proofs,
+independent type obligations, axiom checks and exact Python/Lean conformance.
+
 ## Micro LLM / classifier container
 
 `flake.nix` provisions a podman container for a from-scratch micro LM /

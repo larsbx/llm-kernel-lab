@@ -1,0 +1,46 @@
+name: Exact speculative sampling
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  sampling-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test runner
+        run: python -m pip install pytest==8.3.5
+      - name: Install pinned Lean 4.15.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat lean/lean-toolchain)" = 'leanprover/lean4:v4.15.0'
+          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+            https://github.com/leanprover/lean4/releases/download/v4.15.0/lean-4.15.0-linux.tar.zst \
+            --output "$RUNNER_TEMP/lean.tar.zst"
+          printf '%s  %s\n' af71a2569a9f68337de2434829b3008cd8e32c436e9cb6bd8c84a2c2ba3585c9 \
+            "$RUNNER_TEMP/lean.tar.zst" | sha256sum --check --strict -
+          tar --zstd -xf "$RUNNER_TEMP/lean.tar.zst" -C "$RUNNER_TEMP"
+      - name: Require exact finite-distribution tests
+        run: python -m pytest -q tests/test_speculative_sampling.py tests/test_speculative_acceptance.py
+      - name: Require Lean proofs, type contracts, axioms and cross-language conformance
+        run: >-
+          python tools/check_speculative_sampling.py
+          --lean "$RUNNER_TEMP/lean-4.15.0-linux/bin/lean"
+          --require-clean --out runs/speculative/acceptance.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: speculative-sampling-${{ github.event.pull_request.head.sha || github.sha }}
+          path: runs/speculative/acceptance.json
+          if-no-files-found: error

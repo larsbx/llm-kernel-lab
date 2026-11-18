@@ -54,7 +54,7 @@ id = "reference"
 target = "reference"
 authority = "non_authoritative_reference"
 required = true
-current = ["tensor_lab"]
+current = ["tensor_lab", "sampling_lab"]
 
 [[plane]]
 id = "generation"
